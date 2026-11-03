@@ -1,1 +1,786 @@
+App de Citizen 593 Radio y Podcast
+Código
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Citizen 593 Radio y Podcast</title>
+<style>
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    font-family: Arial, Helvetica, sans-serif;
+    background: #4b5320;
+    color: #fff;
+    text-align: center;
+    min-height: 100vh;
+  }
+  .contenedor { max-width: 420px; margin: 0 auto; padding: 24px 16px; }
+  .logo { width: 220px; max-width: 70%; display: block; margin: 0 auto 12px; }
+  h1 { color: #FFD400; font-size: 26px; margin: 8px 0 4px; }
+  .sub { color: #ccc; margin-bottom: 24px; }
+  .reproductor {
+    background: radial-gradient(circle at top, #2b2b2b 0%, #0d0d0d 100%);
+    border: 2px solid #FFD400;
+    border-radius: 24px;
+    padding: 24px 20px;
+    margin-bottom: 20px;
+    box-shadow: 0 0 25px rgba(255, 212, 0, 0.35);
+  }
+  .disco {
+    width: 170px; height: 170px;
+    margin: 0 auto 16px;
+    border-radius: 50%;
+    border: 4px solid #FFD400;
+    box-shadow: 0 0 30px rgba(255, 212, 0, 0.6);
+    background: #000 url('logo.png') center / cover no-repeat;
+    animation: girar 6s linear infinite;
+    animation-play-state: paused;
+  }
+  .disco.activo { animation-play-state: running; box-shadow: 0 0 45px rgba(255, 212, 0, 0.95); }
+  @keyframes girar { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+  .ecualizador {
+    display: flex;
+    justify-content: center;
+    align-items: flex-end;
+    gap: 5px;
+    height: 40px;
+    margin-bottom: 14px;
+  }
+  .ecualizador span {
+    width: 7px;
+    height: 6px;
+    background: linear-gradient(to top, #FFD400, #ff8a00);
+    border-radius: 3px;
+  }
+  .ecualizador.activo span { animation: bailar 0.9s ease-in-out infinite; }
+  .ecualizador.activo span:nth-child(2) { animation-delay: 0.1s; }
+  .ecualizador.activo span:nth-child(3) { animation-delay: 0.25s; }
+  .ecualizador.activo span:nth-child(4) { animation-delay: 0.4s; }
+  .ecualizador.activo span:nth-child(5) { animation-delay: 0.15s; }
+  .ecualizador.activo span:nth-child(6) { animation-delay: 0.35s; }
+  .ecualizador.activo span:nth-child(7) { animation-delay: 0.05s; }
+  @keyframes bailar { 0%, 100% { height: 6px; } 50% { height: 38px; } }
+  .en-vivo { display: inline-block; background: #e60000; color: #fff; font-size: 12px; font-weight: bold; padding: 3px 10px; border-radius: 12px; margin-bottom: 10px; }
+  .estado { color: #FFD400; font-size: 14px; margin-bottom: 14px; min-height: 18px; }
+  #btnPlay {
+    width: 90px; height: 90px;
+    border-radius: 50%;
+    border: none;
+    background: #FFD400;
+    color: #111;
+    font-size: 36px;
+    cursor: pointer;
+  }
+  #btnPlay:active { transform: scale(0.95); }
+  .reproductor { position: relative; }
+  .volumen {
+    position: absolute;
+    top: 50%;
+    right: 10px;
+    transform: translateY(-50%);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+    font-size: 18px;
+  }
+  .volumen input {
+    writing-mode: vertical-lr;
+    direction: rtl;
+    -webkit-appearance: slider-vertical;
+    appearance: slider-vertical;
+    width: 22px;
+    height: 130px;
+    accent-color: #FFD400;
+  }
+  .boton {
+    display: block;
+    width: 100%;
+    padding: 14px;
+    margin-bottom: 12px;
+    border-radius: 10px;
+    text-decoration: none;
+    font-size: 17px;
+    font-weight: bold;
+  }
+  .whatsapp { background: #25D366; color: #fff; }
+  .red { background: #2a2a2a; color: #FFD400; border: 1px solid #FFD400; }
+  .pie { margin-top: 20px; color: #888; font-size: 13px; }
+  .admin-link { background: none; border: none; color: #888; font-size: 12px; cursor: pointer; text-decoration: underline; margin-top: 8px; }
+  #panelAdmin { display: none; text-align: left; }
+  #panelAdmin.abierto { display: block; }
+  #panelAdmin h3 { color: #FFD400; margin: 18px 0 6px; font-size: 16px; }
+  #panelAdmin input, #panelAdmin textarea {
+    width: 100%;
+    padding: 10px;
+    border-radius: 8px;
+    border: 1px solid #555;
+    background: #111;
+    color: #fff;
+    font-size: 15px;
+    margin-bottom: 6px;
+  }
+  #panelAdmin textarea { min-height: 120px; font-family: monospace; font-size: 13px; }
+  #panelAdmin .ayuda { font-size: 13px; color: #bbb; margin-bottom: 6px; }
+  .btn-admin {
+    width: 100%;
+    padding: 12px;
+    margin-top: 8px;
+    border: none;
+    border-radius: 10px;
+    background: #FFD400;
+    color: #111;
+    font-size: 16px;
+    font-weight: bold;
+    cursor: pointer;
+  }
+  .btn-admin.sec { background: #2a2a2a; color: #FFD400; border: 1px solid #FFD400; }
+  #adminMsg { margin-top: 10px; font-size: 14px; color: #FFD400; }
+  .pestanas {
+    display: flex;
+    gap: 4px;
+    background: rgba(0, 0, 0, 0.35);
+    padding: 4px;
+    border-radius: 14px;
+    margin-bottom: 18px;
+  }
+  .pestanas button {
+    flex: 1;
+    padding: 10px 4px;
+    border: none;
+    border-radius: 10px;
+    background: transparent;
+    color: #ddd;
+    font-size: 14px;
+    cursor: pointer;
+  }
+  .pestanas button.activa { background: #FFD400; color: #111; font-weight: bold; }
+  .panel { display: none; }
+  .panel.activo { display: block; }
+  body { background: #3d4419; }
+  .reproductor, .temporizador, .seccion { border-width: 1px; border-radius: 20px; box-shadow: none; }
+  .seccion { background: rgba(0, 0, 0, 0.35); border-color: rgba(255, 212, 0, 0.4); }
+  .temporizador { background: rgba(0, 0, 0, 0.35); border-color: rgba(255, 212, 0, 0.4); }
+  .boton.red { background: transparent; border-color: rgba(255, 212, 0, 0.5); font-weight: normal; }
+  .temporizador {
+    background: #1e1e1e;
+    border: 2px solid #FFD400;
+    border-radius: 16px;
+    padding: 14px;
+    margin-bottom: 20px;
+  }
+  .temporizador h3 { color: #FFD400; margin: 0 0 10px; font-size: 17px; }
+  .tiempos { max-width: 260px; margin: 0 auto; }
+  #btnTimer {
+    width: 100%;
+    padding: 12px;
+    border-radius: 10px;
+    border: 1px solid #FFD400;
+    background: #FFD400;
+    color: #111;
+    font-size: 16px;
+    font-weight: bold;
+    cursor: pointer;
+  }
+  .lista-tiempos {
+    display: none;
+    margin-top: 6px;
+    border: 1px solid #FFD400;
+    border-radius: 10px;
+    overflow: hidden;
+    background: #111;
+  }
+  .lista-tiempos.abierta { display: block; }
+  .lista-tiempos button {
+    display: block;
+    width: 100%;
+    padding: 12px;
+    border: none;
+    border-bottom: 1px solid #333;
+    background: #111;
+    color: #FFD400;
+    font-size: 16px;
+    cursor: pointer;
+    text-align: center;
+  }
+  .lista-tiempos button:last-child { border-bottom: none; }
+  .lista-tiempos button.elegido { background: #FFD400; color: #111; font-weight: bold; }
+  #cuenta { margin-top: 10px; font-size: 15px; color: #ccc; min-height: 20px; }
+  #cancelarTimer {
+    display: none;
+    margin: 8px auto 0;
+    padding: 8px 16px;
+    border-radius: 8px;
+    border: none;
+    background: #e60000;
+    color: #fff;
+    font-weight: bold;
+    cursor: pointer;
+  }
+  body { padding-bottom: 56px; }
+  .marquesina {
+    position: fixed;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    height: 46px;
+    background: #FFD400;
+    color: #111;
+    overflow: hidden;
+    display: flex;
+    align-items: center;
+    border-top: 3px solid #111;
+    box-shadow: 0 -4px 14px rgba(0, 0, 0, 0.5);
+    z-index: 1000;
+  }
+  .marquesina span {
+    display: inline-block;
+    white-space: nowrap;
+    font-size: 18px;
+    font-weight: bold;
+    padding-left: 100%;
+    animation: correr 18s linear infinite;
+  }
+  @keyframes correr { from { transform: translateX(0); } to { transform: translateX(-100%); } }
+  .seccion {
+    background: #1e1e1e;
+    border: 2px solid #FFD400;
+    border-radius: 16px;
+    padding: 18px;
+    margin-bottom: 20px;
+    text-align: left;
+  }
+  .seccion h2 { color: #FFD400; font-size: 20px; margin: 0 0 12px; text-align: center; }
+  .seccion label { display: block; margin: 10px 0 4px; font-size: 14px; color: #ccc; }
+  .seccion input, .seccion select, .seccion textarea {
+    width: 100%;
+    padding: 10px;
+    border-radius: 8px;
+    border: 1px solid #555;
+    background: #111;
+    color: #fff;
+    font-size: 16px;
+  }
+  .seccion textarea { min-height: 80px; resize: vertical; }
+  .enviar {
+    width: 100%;
+    margin-top: 14px;
+    padding: 14px;
+    border: none;
+    border-radius: 10px;
+    background: #25D366;
+    color: #fff;
+    font-size: 17px;
+    font-weight: bold;
+    cursor: pointer;
+  }
+  .podcast {
+    display: block;
+    padding: 12px;
+    margin-bottom: 10px;
+    border-radius: 10px;
+    background: #2a2a2a;
+    color: #fff;
+    text-decoration: none;
+  }
+  .podcast b { color: #FFD400; display: block; }
+  .podcast span { font-size: 13px; color: #aaa; }
+  .malla { width: 100%; border-collapse: collapse; font-size: 14px; }
+  .malla th { color: #FFD400; text-align: left; padding: 8px 4px; border-bottom: 1px solid #FFD400; }
+  .malla td { padding: 8px 4px; border-bottom: 1px solid #333; }
+  .columna-radio { margin-bottom: 8px; }
+  .columna-secciones { min-width: 0; }
+  @media (min-width: 900px) {
+    .contenedor { max-width: 1100px; padding: 28px 24px; }
+    .cabecera { display: flex; align-items: center; justify-content: center; gap: 18px; margin-bottom: 20px; }
+    .cabecera .logo { width: 90px; margin: 0; }
+    .cabecera h1 { margin: 0; font-size: 32px; }
+    .cabecera .sub { margin: 0; }
+    .disposicion { display: grid; grid-template-columns: 380px 1fr; gap: 28px; align-items: start; }
+    .columna-radio { position: sticky; top: 20px; }
+    .columna-secciones .panel { min-height: 420px; }
+  }
+</style>
+</head>
+<body>
+<div class="contenedor">
+  <div class="cabecera">
+    <img src="logo.png" alt="Citizen 593 Radio y Podcast" class="logo">
+    <div>
+      <h1>Citizen 593</h1>
+      <div class="sub">Radio - Podcast</div>
+    </div>
+  </div>
 
+  <div class="disposicion">
+  <div class="columna-radio" id="columnaRadio"></div>
+  <div class="columna-secciones">
+
+  <div class="pestanas">
+    <button type="button" class="activa" data-panel="pBienvenida">Inicio</button>
+    <button type="button" data-panel="pPodcasts">Podcasts</button>
+    <button type="button" data-panel="pMalla">Programación</button>
+    <button type="button" data-panel="pCabina">Cabina</button>
+  </div>
+
+  <div class="panel activo" id="pBienvenida">
+    <div class="seccion">
+      <h2>Bienvenido a Citizen 593</h2>
+      <p style="text-align:center;color:#ccc;margin:0">Escucha la radio en vivo desde el reproductor, pide tu canción en la Cabina y descubre nuestros podcasts y la programación.</p>
+    </div>
+  </div>
+
+  <div id="origenRadio">
+  <div class="reproductor">
+    <div class="en-vivo">EN VIVO</div>
+    <div class="disco" id="disco"></div>
+    <div class="ecualizador" id="ecualizador"><span></span><span></span><span></span><span></span><span></span><span></span><span></span></div>
+    <div class="estado" id="estado">Toca para escuchar en vivo</div>
+    <button id="btnPlay" aria-label="Reproducir o pausar">&#9658;</button>
+    <div class="volumen">
+      <span>&#128266;</span>
+      <input type="range" id="vol" min="0" max="1" step="0.05" value="0.8" orient="vertical" aria-label="Volumen">
+    </div>
+  </div>
+
+  <div class="temporizador">
+    <h3>&#9202; Apagar la radio en...</h3>
+    <div class="tiempos">
+      <button type="button" id="btnTimer">&#9202; Elegir tiempo &#9662;</button>
+      <div class="lista-tiempos" id="listaTiempos">
+        <button type="button" data-min="15">15 minutos</button>
+        <button type="button" data-min="30">Media hora</button>
+        <button type="button" data-min="45">45 minutos</button>
+        <button type="button" data-min="60">60 minutos</button>
+      </div>
+    </div>
+    <div id="cuenta"></div>
+    <button type="button" id="cancelarTimer">Cancelar temporizador</button>
+  </div>
+  </div>
+
+  <div class="panel" id="pCabina">
+  <div class="seccion">
+    <h2>Peticiones y saludos</h2>
+    <label for="pNombre">Tu nombre</label>
+    <input type="text" id="pNombre" placeholder="Ej: María">
+    <label for="pCiudad">Ciudad o sector</label>
+    <input type="text" id="pCiudad" placeholder="Ej: Quito, Carcelén">
+    <label for="pTipo">Qué quieres enviar</label>
+    <select id="pTipo">
+      <option>Petición musical</option>
+      <option>Saludo</option>
+      <option>Dedicatoria</option>
+    </select>
+    <label for="pCancion">Canción y artista (si es petición)</label>
+    <input type="text" id="pCancion" placeholder="Ej: Mi tierra - Gloria Estefan">
+    <label for="pMensaje">Mensaje o saludo</label>
+    <textarea id="pMensaje" placeholder="Escribe aquí tu saludo o dedicatoria"></textarea>
+    <button type="button" class="enviar" id="btnPeticion">Enviar por WhatsApp</button>
+  </div>
+
+  <a class="boton whatsapp" id="linkWhatsapp" href="#" target="_blank">Escríbenos por WhatsApp</a>
+  <a class="boton red" id="linkFb" href="https://www.facebook.com/TU_PAGINA" target="_blank">Facebook</a>
+  <a class="boton red" id="linkIg" href="https://www.instagram.com/TU_USUARIO" target="_blank">Instagram</a>
+  <a class="boton red" id="linkTt" href="https://www.tiktok.com/@TU_USUARIO" target="_blank">TikTok</a>
+  </div>
+
+  <div class="panel" id="pPodcasts">
+  <div class="seccion" id="listaPodcasts">
+    <h2>Podcasts</h2>
+    <a class="podcast" href="https://TU-ENLACE-PODCAST-1" target="_blank"><b>Podcast de ejemplo 1</b><span>Descripción corta del podcast</span></a>
+    <a class="podcast" href="https://TU-ENLACE-PODCAST-2" target="_blank"><b>Podcast de ejemplo 2</b><span>Descripción corta del podcast</span></a>
+    <a class="podcast" href="https://TU-ENLACE-PODCAST-3" target="_blank"><b>Podcast de ejemplo 3</b><span>Descripción corta del podcast</span></a>
+  </div>
+
+  </div>
+
+  <div class="panel" id="pMalla">
+  <div class="seccion">
+    <h2>Malla de programación</h2>
+    <table class="malla" id="tablaMalla">
+      <tr><th>Horario</th><th>Programa</th></tr>
+      <tr><td>06:00 - 09:00</td><td>Buenos días Citizen (ejemplo)</td></tr>
+      <tr><td>09:00 - 12:00</td><td>Música y variedad (ejemplo)</td></tr>
+      <tr><td>12:00 - 15:00</td><td>Hora del almuerzo (ejemplo)</td></tr>
+      <tr><td>15:00 - 18:00</td><td>Tarde de éxitos (ejemplo)</td></tr>
+      <tr><td>18:00 - 21:00</td><td>Noche de podcast (ejemplo)</td></tr>
+    </table>
+  </div>
+
+  <div class="panel" id="pAdmin">
+    <div class="seccion">
+      <h2>Administración</h2>
+      <div id="loginAdmin">
+        <label for="admUser">Usuario</label>
+        <input type="text" id="admUser" autocomplete="off">
+        <label for="admPass">Clave</label>
+        <input type="password" id="admPass" autocomplete="off">
+        <button type="button" class="btn-admin" id="btnLogin">Entrar</button>
+      </div>
+
+      <div id="panelAdmin">
+        <h3>Datos generales</h3>
+        <label for="cfgStream">Enlace del streaming</label>
+        <input type="text" id="cfgStream">
+        <label for="cfgWhats">Número de WhatsApp (con código de país, sin signos)</label>
+        <input type="text" id="cfgWhats">
+        <label for="cfgMarquesina">Texto de la marquesina</label>
+        <input type="text" id="cfgMarquesina">
+
+        <h3>Redes sociales</h3>
+        <label for="cfgFb">Facebook</label>
+        <input type="text" id="cfgFb">
+        <label for="cfgIg">Instagram</label>
+        <input type="text" id="cfgIg">
+        <label for="cfgTt">TikTok</label>
+        <input type="text" id="cfgTt">
+
+        <h3>Podcasts</h3>
+        <div class="ayuda">Una línea por podcast, así: Nombre | Descripción | Enlace</div>
+        <textarea id="cfgPodcasts"></textarea>
+
+        <h3>Malla de programación</h3>
+        <div class="ayuda">Una línea por programa, así: Horario | Programa</div>
+        <textarea id="cfgMalla"></textarea>
+
+        <button type="button" class="btn-admin" id="btnAplicar">Probar cambios aquí</button>
+        <button type="button" class="btn-admin" id="btnDescargar">Descargar config.json</button>
+        <button type="button" class="btn-admin sec" id="btnSalir">Salir</button>
+        <div id="adminMsg"></div>
+        <div class="ayuda" style="margin-top:10px">Para publicar: descarga config.json y súbelo a tu repositorio de GitHub (Add file, Upload files), reemplazando el anterior.</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="pie">Citizen 593 Radio y Podcast<br><button type="button" class="admin-link" id="abrirAdmin">Administración</button></div>
+
+  </div>
+  </div>
+</div>
+<!-- fin contenedor -->
+
+<div class="marquesina"><span id="textoMarquesina">&#128062; Muchos dicen amar a los animales, pocos tienen el corazón de hacerlo. &#128062;</span></div>
+
+<audio id="audio" preload="none"></audio>
+
+<script>
+  // CAMBIA ESTE ENLACE por el de tu streaming en vivo
+  var URL_STREAMING = 'https://TU-SERVIDOR/stream.mp3';
+
+  // Número de WhatsApp de la radio, con código de país y sin signos
+  var NUMERO_WHATSAPP = '593989513973';
+
+  var audio = document.getElementById('audio');
+  var btn = document.getElementById('btnPlay');
+  var estado = document.getElementById('estado');
+  var vol = document.getElementById('vol');
+  var sonando = false;
+  var disco = document.getElementById('disco');
+  var ecu = document.getElementById('ecualizador');
+
+  function animar(activo) {
+    if (activo) { disco.classList.add('activo'); ecu.classList.add('activo'); }
+    else { disco.classList.remove('activo'); ecu.classList.remove('activo'); }
+  }
+
+  document.getElementById('linkWhatsapp').href =
+    'https://wa.me/' + NUMERO_WHATSAPP + '?text=' +
+    encodeURIComponent('Hola Citizen 593, los escucho desde la app.');
+
+  document.getElementById('btnPeticion').addEventListener('click', function () {
+    var nombre = document.getElementById('pNombre').value.trim();
+    var ciudad = document.getElementById('pCiudad').value.trim();
+    var tipo = document.getElementById('pTipo').value;
+    var cancion = document.getElementById('pCancion').value.trim();
+    var mensaje = document.getElementById('pMensaje').value.trim();
+    if (!nombre) { alert('Por favor escribe tu nombre.'); return; }
+    var texto = 'Hola Citizen 593!\n' +
+      'Tipo: ' + tipo + '\n' +
+      'Nombre: ' + nombre + '\n' +
+      'Ciudad: ' + ciudad + '\n' +
+      (cancion ? 'Canción: ' + cancion + '\n' : '') +
+      (mensaje ? 'Mensaje: ' + mensaje : '');
+    window.open('https://wa.me/' + NUMERO_WHATSAPP + '?text=' + encodeURIComponent(texto), '_blank');
+  });
+
+  // ===== ADMINISTRACION =====
+  // Cambia aqui el usuario y la clave del panel
+  var ADMIN_USUARIO = 'admin';
+  var ADMIN_CLAVE = 'citizen593';
+
+  var config = {
+    streaming: URL_STREAMING,
+    whatsapp: NUMERO_WHATSAPP,
+    marquesina: document.getElementById('textoMarquesina').textContent.trim(),
+    facebook: document.getElementById('linkFb').getAttribute('href'),
+    instagram: document.getElementById('linkIg').getAttribute('href'),
+    tiktok: document.getElementById('linkTt').getAttribute('href'),
+    podcasts: [],
+    malla: []
+  };
+
+  document.querySelectorAll('#listaPodcasts .podcast').forEach(function (a) {
+    config.podcasts.push({
+      nombre: a.querySelector('b').textContent,
+      descripcion: a.querySelector('span').textContent,
+      enlace: a.getAttribute('href')
+    });
+  });
+  document.querySelectorAll('#tablaMalla tr').forEach(function (tr, i) {
+    if (i === 0) return;
+    var td = tr.querySelectorAll('td');
+    config.malla.push({ horario: td[0].textContent, programa: td[1].textContent });
+  });
+
+  function esc(t) {
+    return String(t).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+  }
+
+  function aplicarConfig() {
+    URL_STREAMING = config.streaming;
+    NUMERO_WHATSAPP = config.whatsapp;
+    document.getElementById('textoMarquesina').innerHTML = '&#128062; ' + esc(config.marquesina) + ' &#128062;';
+    document.getElementById('linkFb').href = config.facebook;
+    document.getElementById('linkIg').href = config.instagram;
+    document.getElementById('linkTt').href = config.tiktok;
+    document.getElementById('linkWhatsapp').href = 'https://wa.me/' + config.whatsapp + '?text=' + encodeURIComponent('Hola Citizen 593, los escucho desde la app.');
+
+    var htmlP = '<h2>Podcasts</h2>';
+    config.podcasts.forEach(function (p) {
+      htmlP += '<a class="podcast" href="' + esc(p.enlace) + '" target="_blank"><b>' + esc(p.nombre) + '</b><span>' + esc(p.descripcion) + '</span></a>';
+    });
+    document.getElementById('listaPodcasts').innerHTML = htmlP;
+
+    var htmlM = '<tr><th>Horario</th><th>Programa</th></tr>';
+    config.malla.forEach(function (m) {
+      htmlM += '<tr><td>' + esc(m.horario) + '</td><td>' + esc(m.programa) + '</td></tr>';
+    });
+    document.getElementById('tablaMalla').innerHTML = htmlM;
+  }
+
+  function llenarFormulario() {
+    document.getElementById('cfgStream').value = config.streaming;
+    document.getElementById('cfgWhats').value = config.whatsapp;
+    document.getElementById('cfgMarquesina').value = config.marquesina;
+    document.getElementById('cfgFb').value = config.facebook;
+    document.getElementById('cfgIg').value = config.instagram;
+    document.getElementById('cfgTt').value = config.tiktok;
+    document.getElementById('cfgPodcasts').value = config.podcasts.map(function (p) {
+      return p.nombre + ' | ' + p.descripcion + ' | ' + p.enlace;
+    }).join('\n');
+    document.getElementById('cfgMalla').value = config.malla.map(function (m) {
+      return m.horario + ' | ' + m.programa;
+    }).join('\n');
+  }
+
+  function leerFormulario() {
+    config.streaming = document.getElementById('cfgStream').value.trim();
+    config.whatsapp = document.getElementById('cfgWhats').value.replace(/[^0-9]/g, '');
+    config.marquesina = document.getElementById('cfgMarquesina').value.trim();
+    config.facebook = document.getElementById('cfgFb').value.trim();
+    config.instagram = document.getElementById('cfgIg').value.trim();
+    config.tiktok = document.getElementById('cfgTt').value.trim();
+    config.podcasts = document.getElementById('cfgPodcasts').value.split('\n').filter(function (l) { return l.trim(); }).map(function (l) {
+      var p = l.split('|');
+      return { nombre: (p[0] || '').trim(), descripcion: (p[1] || '').trim(), enlace: (p[2] || '').trim() };
+    });
+    config.malla = document.getElementById('cfgMalla').value.split('\n').filter(function (l) { return l.trim(); }).map(function (l) {
+      var p = l.split('|');
+      return { horario: (p[0] || '').trim(), programa: (p[1] || '').trim() };
+    });
+  }
+
+  // Al abrir la pagina, intenta leer config.json del repositorio
+  fetch('config.json?v=' + Date.now())
+    .then(function (r) { return r.ok ? r.json() : null; })
+    .then(function (c) {
+      if (c) { for (var k in c) { config[k] = c[k]; } }
+      aplicarConfig();
+    })
+    .catch(function () { aplicarConfig(); });
+
+  var adminMsg = document.getElementById('adminMsg');
+  var pAdmin = document.getElementById('pAdmin');
+
+  document.getElementById('abrirAdmin').addEventListener('click', function () {
+    document.querySelectorAll('.pestanas button').forEach(function (x) { x.classList.remove('activa'); });
+    document.querySelectorAll('.panel').forEach(function (p) { p.classList.remove('activo'); });
+    pAdmin.classList.add('activo');
+  });
+
+  document.getElementById('btnLogin').addEventListener('click', function () {
+    var u = document.getElementById('admUser').value.trim();
+    var c = document.getElementById('admPass').value;
+    if (u === ADMIN_USUARIO && c === ADMIN_CLAVE) {
+      document.getElementById('loginAdmin').style.display = 'none';
+      document.getElementById('panelAdmin').classList.add('abierto');
+      llenarFormulario();
+    } else {
+      alert('Usuario o clave incorrectos.');
+    }
+  });
+
+  document.getElementById('btnAplicar').addEventListener('click', function () {
+    leerFormulario();
+    aplicarConfig();
+    adminMsg.textContent = 'Cambios aplicados solo en este navegador. Descarga config.json para publicarlos.';
+  });
+
+  document.getElementById('btnDescargar').addEventListener('click', function () {
+    leerFormulario();
+    aplicarConfig();
+    var blob = new Blob([JSON.stringify(config, null, 2)], { type: 'application/json' });
+    var enlace = document.createElement('a');
+    enlace.href = URL.createObjectURL(blob);
+    enlace.download = 'config.json';
+    document.body.appendChild(enlace);
+    enlace.click();
+    document.body.removeChild(enlace);
+    adminMsg.textContent = 'Archivo config.json descargado. Súbelo a GitHub para publicar los cambios.';
+  });
+
+  document.getElementById('btnSalir').addEventListener('click', function () {
+    document.getElementById('loginAdmin').style.display = 'block';
+    document.getElementById('panelAdmin').classList.remove('abierto');
+    document.getElementById('admPass').value = '';
+    adminMsg.textContent = '';
+    document.querySelectorAll('.pestanas button').forEach(function (x) { x.classList.remove('activa'); });
+    document.querySelectorAll('.panel').forEach(function (p) { p.classList.remove('activo'); });
+    document.getElementById('pBienvenida').classList.add('activo');
+    document.querySelector('.pestanas button').classList.add('activa');
+  });
+
+  var botonesPestana = document.querySelectorAll('.pestanas button');
+  var paneles = document.querySelectorAll('.panel');
+  botonesPestana.forEach(function (bp) {
+    bp.addEventListener('click', function () {
+      botonesPestana.forEach(function (x) { x.classList.remove('activa'); });
+      paneles.forEach(function (p) { p.classList.remove('activo'); });
+      bp.classList.add('activa');
+      document.getElementById(bp.getAttribute('data-panel')).classList.add('activo');
+    });
+  });
+
+  var intervaloTimer = null;
+  var finTimer = 0;
+  var botonesTiempo = document.querySelectorAll('#listaTiempos button');
+  var lista = document.getElementById('listaTiempos');
+  var btnTimer = document.getElementById('btnTimer');
+
+  btnTimer.addEventListener('click', function () {
+    lista.classList.toggle('abierta');
+  });
+  var cuenta = document.getElementById('cuenta');
+  var cancelar = document.getElementById('cancelarTimer');
+
+  function detenerRadio() {
+    audio.pause();
+    audio.removeAttribute('src');
+    audio.load();
+    sonando = false;
+    btn.innerHTML = '&#9658;';
+    estado.textContent = 'Pausado';
+    animar(false);
+  }
+
+  function limpiarTimer() {
+    if (intervaloTimer) { clearInterval(intervaloTimer); intervaloTimer = null; }
+    botonesTiempo.forEach(function (b) { b.classList.remove('elegido'); });
+    cancelar.style.display = 'none';
+  }
+
+  function actualizarCuenta() {
+    var resta = Math.max(0, Math.round((finTimer - Date.now()) / 1000));
+    if (resta <= 0) {
+      limpiarTimer();
+      btnTimer.innerHTML = '&#9202; Elegir tiempo &#9662;';
+      detenerRadio();
+      cuenta.textContent = 'Temporizador terminado. ¡Hasta pronto!';
+      return;
+    }
+    var m = Math.floor(resta / 60);
+    var s = resta % 60;
+    cuenta.textContent = 'Se apagará en ' + m + ':' + (s < 10 ? '0' : '') + s;
+  }
+
+  botonesTiempo.forEach(function (b) {
+    b.addEventListener('click', function () {
+      limpiarTimer();
+      lista.classList.remove('abierta');
+      btnTimer.innerHTML = '&#9202; ' + b.textContent + ' &#9662;';
+      b.classList.add('elegido');
+      finTimer = Date.now() + parseInt(b.getAttribute('data-min'), 10) * 60000;
+      cancelar.style.display = 'block';
+      actualizarCuenta();
+      intervaloTimer = setInterval(actualizarCuenta, 1000);
+    });
+  });
+
+  cancelar.addEventListener('click', function () {
+    limpiarTimer();
+    btnTimer.innerHTML = '&#9202; Elegir tiempo &#9662;';
+    cuenta.textContent = 'Temporizador cancelado.';
+  });
+
+  audio.volume = vol.value;
+  vol.addEventListener('input', function () { audio.volume = vol.value; });
+
+  btn.addEventListener('click', function () {
+    if (!sonando) {
+      audio.src = URL_STREAMING + '?t=' + Date.now();
+      estado.textContent = 'Conectando...';
+      audio.play().then(function () {
+        sonando = true;
+        btn.innerHTML = '&#10074;&#10074;';
+        estado.textContent = 'En vivo';
+        animar(true);
+      }).catch(function () {
+        estado.textContent = 'No se pudo conectar. Intenta de nuevo.';
+        animar(false);
+      });
+    } else {
+      audio.pause();
+      audio.removeAttribute('src');
+      audio.load();
+      sonando = false;
+      btn.innerHTML = '&#9658;';
+      estado.textContent = 'Pausado';
+      animar(false);
+    }
+  });
+
+  audio.addEventListener('error', function () {
+    if (sonando || audio.src) {
+      estado.textContent = 'Sin señal. Revisa el enlace del streaming.';
+    }
+  });
+
+  // ===== DISEÑO: reproductor a la izquierda en computadora, arriba en celular =====
+  var origenRadio = document.getElementById('origenRadio');
+  var columnaRadio = document.getElementById('columnaRadio');
+  var enMovil = document.getElementById('pBienvenida');
+  var anchoPc = window.matchMedia('(min-width: 900px)');
+
+  function acomodarDiseno() {
+    if (anchoPc.matches) {
+      columnaRadio.appendChild(origenRadio);
+    } else {
+      enMovil.parentNode.insertBefore(origenRadio, enMovil);
+    }
+  }
+  acomodarDiseno();
+  if (anchoPc.addEventListener) { anchoPc.addEventListener('change', acomodarDiseno); }
+  else { anchoPc.addListener(acomodarDiseno); }
+
+  // En celular, el panel de bienvenida no hace falta: el reproductor ya esta arriba
+  var estiloMovil = document.createElement('style');
+  estiloMovil.textContent = '@media (max-width: 899px) { #pBienvenida { display: none !important; } #origenRadio { margin-bottom: 18px; } }';
+  document.head.appendChild(estiloMovil);
+</script>
+</body>
+</html>
+Qué debes cambiar
+En el código hay tres cosas para personalizar: el enlace del streaming en la línea que dice URL_STREAMING, el número de WhatsApp en NUMERO_WHATSAPP, y los enlaces de Facebook, Instagram y TikTok, donde dice TU_PAGINA y TU_USUARIO. Si tu streaming usa http y no https, el navegador puede bloquearlo en una página publicada en GitHub, así que conviene pedirle a tu proveedor un enlace seguro.
