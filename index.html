@@ -1,1752 +1,786 @@
+App de Citizen 593 Radio y Podcast
+Código
 <!DOCTYPE html>
-<html lang="es" class="dark">
+<html lang="es">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Radio Online | App Oficial</title>
-    <!-- Tailwind CSS -->
-    <script src="https://cdn.tailwindcss.com"></script>
-    <!-- Google Fonts: Inter & Orbitron for numbers/tech feel -->
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=Chakra+Petch:wght@700;800&display=swap" rel="stylesheet">
-    <!-- Font Awesome Icons -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
-
-    <script>
-        tailwind.config = {
-            darkMode: 'class',
-            theme: {
-                extend: {
-                    colors: {
-                        citizen: {
-                            yellow: '#FFEA00',
-                            gold: '#FFD000',
-                            blue: '#0055A4',
-                            red: '#E60000',
-                            dark: '#365938',
-                            card: 'rgba(14, 26, 15, 0.78)',
-                            border: 'rgba(255, 234, 0, 0.22)'
-                        }
-                    },
-                    fontFamily: {
-                        sans: ['Inter', 'sans-serif'],
-                        display: ['Chakra Petch', 'sans-serif']
-                    },
-                    animation: {
-                        'spin-slow': 'spin 18s linear infinite',
-                        'pulse-fast': 'pulse 1.5s cubic-bezier(0.4, 0, 0.6, 1) infinite',
-                    }
-                }
-            }
-        }
-
-        // Global SVG Logo fallback defined in <head> so inline <img onerror="replaceWithSvgLogo(this)"> is always available immediately
-        window.replaceWithSvgLogo = function(imgElement) {
-            const renderSvg = () => {
-                const template = document.getElementById('citizen-svg-logo-template');
-                if (template && imgElement && imgElement.parentNode) {
-                    const clone = template.content.cloneNode(true);
-                    const parent = imgElement.parentNode;
-                    parent.innerHTML = '';
-                    parent.appendChild(clone);
-                }
-            };
-            if (document.getElementById('citizen-svg-logo-template')) {
-                renderSvg();
-            } else {
-                window.addEventListener('DOMContentLoaded', renderSvg, { once: true });
-            }
-        };
-    </script>
-
-    <style>
-        * {
-            -webkit-tap-highlight-color: transparent;
-        }
-        body {
-            background-color: #365938;
-            color: #F8FAFC;
-            font-family: 'Inter', sans-serif;
-            overflow-x: hidden;
-        }
-
-        /* Glassmorphism panels over #365938 */
-        .bg-citizen-card {
-            background-color: rgba(12, 24, 13, 0.78);
-            backdrop-filter: blur(16px);
-            -webkit-backdrop-filter: blur(16px);
-        }
-
-        /* Custom Scrollbar */
-        ::-webkit-scrollbar {
-            width: 6px;
-            height: 6px;
-        }
-        ::-webkit-scrollbar-track {
-            background: #365938;
-        }
-        ::-webkit-scrollbar-thumb {
-            background: rgba(12, 24, 13, 0.85);
-            border-radius: 9999px;
-        }
-        ::-webkit-scrollbar-thumb:hover {
-            background: #FFEA00;
-        }
-
-        /* Luna Player Glow & Turntable Effects on #365938 */
-        .luna-container {
-            background: radial-gradient(circle at 50% 32%, rgba(255, 234, 0, 0.18) 0%, rgba(0, 85, 164, 0.15) 42%, rgba(10, 20, 11, 0.92) 85%);
-            backdrop-filter: blur(20px);
-            -webkit-backdrop-filter: blur(20px);
-            box-shadow: 0 24px 60px rgba(0, 0, 0, 0.55), inset 0 1px 1px rgba(255, 234, 0, 0.25);
-        }
-
-        .luna-disc-ring {
-            box-shadow: 0 0 35px rgba(255, 234, 0, 0.25), inset 0 0 20px rgba(255, 234, 0, 0.2);
-            transition: all 0.5s ease;
-        }
-        .luna-disc-ring.playing {
-            box-shadow: 0 0 55px rgba(255, 234, 0, 0.55), 0 0 90px rgba(0, 85, 164, 0.35);
-        }
-
-        .vinyl-spin {
-            animation: spin 16s linear infinite;
-            animation-play-state: paused;
-        }
-        .vinyl-spin.playing {
-            animation-play-state: running;
-        }
-
-        @keyframes spin {
-            from { transform: rotate(0deg); }
-            to { transform: rotate(360deg); }
-        }
-
-        /* Marquee Effect for Luna Track Title */
-        .marquee-wrapper {
-            overflow: hidden;
-            white-space: nowrap;
-            position: relative;
-            mask-image: linear-gradient(to right, transparent 0%, black 8%, black 92%, transparent 100%);
-            -webkit-mask-image: linear-gradient(to right, transparent 0%, black 8%, black 92%, transparent 100%);
-        }
-        .marquee-content {
-            display: inline-block;
-            padding-left: 100%;
-            animation: marquee 18s linear infinite;
-        }
-        .marquee-content:hover {
-            animation-play-state: paused;
-        }
-        @keyframes marquee {
-            0% { transform: translate(0, 0); }
-            100% { transform: translate(-100%, 0); }
-        }
-
-        /* Custom Range Slider for Luna Volume */
-        input[type=range].luna-slider {
-            -webkit-appearance: none;
-            appearance: none;
-            background: transparent;
-            cursor: pointer;
-        }
-        input[type=range].luna-slider::-webkit-slider-runnable-track {
-            background: #272736;
-            height: 6px;
-            border-radius: 999px;
-        }
-        input[type=range].luna-slider::-webkit-slider-thumb {
-            -webkit-appearance: none;
-            appearance: none;
-            margin-top: -5px;
-            background-color: #FFEA00;
-            height: 16px;
-            width: 16px;
-            border-radius: 50%;
-            box-shadow: 0 0 10px rgba(255, 234, 0, 0.8);
-            transition: transform 0.15s ease;
-        }
-        input[type=range].luna-slider::-webkit-slider-thumb:hover {
-            transform: scale(1.2);
-        }
-
-        /* Vertical Volume Slider wrapper next to rotating logo */
-        .luna-vertical-slider-wrap {
-            position: relative;
-            width: 28px;
-            height: 115px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-        }
-        @media (min-width: 640px) {
-            .luna-vertical-slider-wrap {
-                height: 135px;
-            }
-        }
-        input[type=range].luna-slider-vertical {
-            width: 110px;
-            height: 6px;
-            transform: rotate(-90deg);
-            transform-origin: center;
-            flex-shrink: 0;
-        }
-        @media (min-width: 640px) {
-            input[type=range].luna-slider-vertical {
-                width: 130px;
-            }
-        }
-
-        /* Equalizer mini bars */
-        .eq-bar {
-            width: 3px;
-            background-color: #FFEA00;
-            border-radius: 2px;
-            transition: height 0.15s ease;
-        }
-    </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Citizen 593 Radio y Podcast</title>
+<style>
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    font-family: Arial, Helvetica, sans-serif;
+    background: #4b5320;
+    color: #fff;
+    text-align: center;
+    min-height: 100vh;
+  }
+  .contenedor { max-width: 420px; margin: 0 auto; padding: 24px 16px; }
+  .logo { width: 220px; max-width: 70%; display: block; margin: 0 auto 12px; }
+  h1 { color: #FFD400; font-size: 26px; margin: 8px 0 4px; }
+  .sub { color: #ccc; margin-bottom: 24px; }
+  .reproductor {
+    background: radial-gradient(circle at top, #2b2b2b 0%, #0d0d0d 100%);
+    border: 2px solid #FFD400;
+    border-radius: 24px;
+    padding: 24px 20px;
+    margin-bottom: 20px;
+    box-shadow: 0 0 25px rgba(255, 212, 0, 0.35);
+  }
+  .disco {
+    width: 170px; height: 170px;
+    margin: 0 auto 16px;
+    border-radius: 50%;
+    border: 4px solid #FFD400;
+    box-shadow: 0 0 30px rgba(255, 212, 0, 0.6);
+    background: #000 url('logo.png') center / cover no-repeat;
+    animation: girar 6s linear infinite;
+    animation-play-state: paused;
+  }
+  .disco.activo { animation-play-state: running; box-shadow: 0 0 45px rgba(255, 212, 0, 0.95); }
+  @keyframes girar { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+  .ecualizador {
+    display: flex;
+    justify-content: center;
+    align-items: flex-end;
+    gap: 5px;
+    height: 40px;
+    margin-bottom: 14px;
+  }
+  .ecualizador span {
+    width: 7px;
+    height: 6px;
+    background: linear-gradient(to top, #FFD400, #ff8a00);
+    border-radius: 3px;
+  }
+  .ecualizador.activo span { animation: bailar 0.9s ease-in-out infinite; }
+  .ecualizador.activo span:nth-child(2) { animation-delay: 0.1s; }
+  .ecualizador.activo span:nth-child(3) { animation-delay: 0.25s; }
+  .ecualizador.activo span:nth-child(4) { animation-delay: 0.4s; }
+  .ecualizador.activo span:nth-child(5) { animation-delay: 0.15s; }
+  .ecualizador.activo span:nth-child(6) { animation-delay: 0.35s; }
+  .ecualizador.activo span:nth-child(7) { animation-delay: 0.05s; }
+  @keyframes bailar { 0%, 100% { height: 6px; } 50% { height: 38px; } }
+  .en-vivo { display: inline-block; background: #e60000; color: #fff; font-size: 12px; font-weight: bold; padding: 3px 10px; border-radius: 12px; margin-bottom: 10px; }
+  .estado { color: #FFD400; font-size: 14px; margin-bottom: 14px; min-height: 18px; }
+  #btnPlay {
+    width: 90px; height: 90px;
+    border-radius: 50%;
+    border: none;
+    background: #FFD400;
+    color: #111;
+    font-size: 36px;
+    cursor: pointer;
+  }
+  #btnPlay:active { transform: scale(0.95); }
+  .reproductor { position: relative; }
+  .volumen {
+    position: absolute;
+    top: 50%;
+    right: 10px;
+    transform: translateY(-50%);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+    font-size: 18px;
+  }
+  .volumen input {
+    writing-mode: vertical-lr;
+    direction: rtl;
+    -webkit-appearance: slider-vertical;
+    appearance: slider-vertical;
+    width: 22px;
+    height: 130px;
+    accent-color: #FFD400;
+  }
+  .boton {
+    display: block;
+    width: 100%;
+    padding: 14px;
+    margin-bottom: 12px;
+    border-radius: 10px;
+    text-decoration: none;
+    font-size: 17px;
+    font-weight: bold;
+  }
+  .whatsapp { background: #25D366; color: #fff; }
+  .red { background: #2a2a2a; color: #FFD400; border: 1px solid #FFD400; }
+  .pie { margin-top: 20px; color: #888; font-size: 13px; }
+  .admin-link { background: none; border: none; color: #888; font-size: 12px; cursor: pointer; text-decoration: underline; margin-top: 8px; }
+  #panelAdmin { display: none; text-align: left; }
+  #panelAdmin.abierto { display: block; }
+  #panelAdmin h3 { color: #FFD400; margin: 18px 0 6px; font-size: 16px; }
+  #panelAdmin input, #panelAdmin textarea {
+    width: 100%;
+    padding: 10px;
+    border-radius: 8px;
+    border: 1px solid #555;
+    background: #111;
+    color: #fff;
+    font-size: 15px;
+    margin-bottom: 6px;
+  }
+  #panelAdmin textarea { min-height: 120px; font-family: monospace; font-size: 13px; }
+  #panelAdmin .ayuda { font-size: 13px; color: #bbb; margin-bottom: 6px; }
+  .btn-admin {
+    width: 100%;
+    padding: 12px;
+    margin-top: 8px;
+    border: none;
+    border-radius: 10px;
+    background: #FFD400;
+    color: #111;
+    font-size: 16px;
+    font-weight: bold;
+    cursor: pointer;
+  }
+  .btn-admin.sec { background: #2a2a2a; color: #FFD400; border: 1px solid #FFD400; }
+  #adminMsg { margin-top: 10px; font-size: 14px; color: #FFD400; }
+  .pestanas {
+    display: flex;
+    gap: 4px;
+    background: rgba(0, 0, 0, 0.35);
+    padding: 4px;
+    border-radius: 14px;
+    margin-bottom: 18px;
+  }
+  .pestanas button {
+    flex: 1;
+    padding: 10px 4px;
+    border: none;
+    border-radius: 10px;
+    background: transparent;
+    color: #ddd;
+    font-size: 14px;
+    cursor: pointer;
+  }
+  .pestanas button.activa { background: #FFD400; color: #111; font-weight: bold; }
+  .panel { display: none; }
+  .panel.activo { display: block; }
+  body { background: #3d4419; }
+  .reproductor, .temporizador, .seccion { border-width: 1px; border-radius: 20px; box-shadow: none; }
+  .seccion { background: rgba(0, 0, 0, 0.35); border-color: rgba(255, 212, 0, 0.4); }
+  .temporizador { background: rgba(0, 0, 0, 0.35); border-color: rgba(255, 212, 0, 0.4); }
+  .boton.red { background: transparent; border-color: rgba(255, 212, 0, 0.5); font-weight: normal; }
+  .temporizador {
+    background: #1e1e1e;
+    border: 2px solid #FFD400;
+    border-radius: 16px;
+    padding: 14px;
+    margin-bottom: 20px;
+  }
+  .temporizador h3 { color: #FFD400; margin: 0 0 10px; font-size: 17px; }
+  .tiempos { max-width: 260px; margin: 0 auto; }
+  #btnTimer {
+    width: 100%;
+    padding: 12px;
+    border-radius: 10px;
+    border: 1px solid #FFD400;
+    background: #FFD400;
+    color: #111;
+    font-size: 16px;
+    font-weight: bold;
+    cursor: pointer;
+  }
+  .lista-tiempos {
+    display: none;
+    margin-top: 6px;
+    border: 1px solid #FFD400;
+    border-radius: 10px;
+    overflow: hidden;
+    background: #111;
+  }
+  .lista-tiempos.abierta { display: block; }
+  .lista-tiempos button {
+    display: block;
+    width: 100%;
+    padding: 12px;
+    border: none;
+    border-bottom: 1px solid #333;
+    background: #111;
+    color: #FFD400;
+    font-size: 16px;
+    cursor: pointer;
+    text-align: center;
+  }
+  .lista-tiempos button:last-child { border-bottom: none; }
+  .lista-tiempos button.elegido { background: #FFD400; color: #111; font-weight: bold; }
+  #cuenta { margin-top: 10px; font-size: 15px; color: #ccc; min-height: 20px; }
+  #cancelarTimer {
+    display: none;
+    margin: 8px auto 0;
+    padding: 8px 16px;
+    border-radius: 8px;
+    border: none;
+    background: #e60000;
+    color: #fff;
+    font-weight: bold;
+    cursor: pointer;
+  }
+  body { padding-bottom: 56px; }
+  .marquesina {
+    position: fixed;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    height: 46px;
+    background: #FFD400;
+    color: #111;
+    overflow: hidden;
+    display: flex;
+    align-items: center;
+    border-top: 3px solid #111;
+    box-shadow: 0 -4px 14px rgba(0, 0, 0, 0.5);
+    z-index: 1000;
+  }
+  .marquesina span {
+    display: inline-block;
+    white-space: nowrap;
+    font-size: 18px;
+    font-weight: bold;
+    padding-left: 100%;
+    animation: correr 18s linear infinite;
+  }
+  @keyframes correr { from { transform: translateX(0); } to { transform: translateX(-100%); } }
+  .seccion {
+    background: #1e1e1e;
+    border: 2px solid #FFD400;
+    border-radius: 16px;
+    padding: 18px;
+    margin-bottom: 20px;
+    text-align: left;
+  }
+  .seccion h2 { color: #FFD400; font-size: 20px; margin: 0 0 12px; text-align: center; }
+  .seccion label { display: block; margin: 10px 0 4px; font-size: 14px; color: #ccc; }
+  .seccion input, .seccion select, .seccion textarea {
+    width: 100%;
+    padding: 10px;
+    border-radius: 8px;
+    border: 1px solid #555;
+    background: #111;
+    color: #fff;
+    font-size: 16px;
+  }
+  .seccion textarea { min-height: 80px; resize: vertical; }
+  .enviar {
+    width: 100%;
+    margin-top: 14px;
+    padding: 14px;
+    border: none;
+    border-radius: 10px;
+    background: #25D366;
+    color: #fff;
+    font-size: 17px;
+    font-weight: bold;
+    cursor: pointer;
+  }
+  .podcast {
+    display: block;
+    padding: 12px;
+    margin-bottom: 10px;
+    border-radius: 10px;
+    background: #2a2a2a;
+    color: #fff;
+    text-decoration: none;
+  }
+  .podcast b { color: #FFD400; display: block; }
+  .podcast span { font-size: 13px; color: #aaa; }
+  .malla { width: 100%; border-collapse: collapse; font-size: 14px; }
+  .malla th { color: #FFD400; text-align: left; padding: 8px 4px; border-bottom: 1px solid #FFD400; }
+  .malla td { padding: 8px 4px; border-bottom: 1px solid #333; }
+  .columna-radio { margin-bottom: 8px; }
+  .columna-secciones { min-width: 0; }
+  @media (min-width: 900px) {
+    .contenedor { max-width: 1100px; padding: 28px 24px; }
+    .cabecera { display: flex; align-items: center; justify-content: center; gap: 18px; margin-bottom: 20px; }
+    .cabecera .logo { width: 90px; margin: 0; }
+    .cabecera h1 { margin: 0; font-size: 32px; }
+    .cabecera .sub { margin: 0; }
+    .disposicion { display: grid; grid-template-columns: 380px 1fr; gap: 28px; align-items: start; }
+    .columna-radio { position: sticky; top: 20px; }
+    .columna-secciones .panel { min-height: 420px; }
+  }
+</style>
 </head>
-<body class="min-h-screen flex flex-col selection:bg-citizen-yellow selection:text-black">
-
-    <!-- REUSABLE SVG LOGO TEMPLATE (Hidden definition, injected via JS or used as exact fallback for 593-LOGO2.png) -->
-    <template id="citizen-svg-logo-template">
-        <svg viewBox="0 0 500 500" class="w-full h-full select-none" xmlns="http://www.w3.org/2000/svg">
-            <defs>
-                <!-- Radial glow for inner circle -->
-                <radialGradient id="innerYellowGrad" cx="50%" cy="50%" r="50%">
-                    <stop offset="0%" stop-color="#FFFDF0" />
-                    <stop offset="45%" stop-color="#FFF033" />
-                    <stop offset="100%" stop-color="#FFEA00" />
-                </radialGradient>
-                <!-- Text paths for curved typography -->
-                <path id="textPathTop" d="M 142,262 A 108,108 0 1,1 358,262" fill="none" />
-                <path id="textPathBottom" d="M 122,265 A 128,128 0 0,0 378,265" fill="none" />
-            </defs>
-
-            <!-- Outer Yellow Circle with Black Border -->
-            <circle cx="250" cy="250" r="243" fill="#FFEA00" stroke="#000000" stroke-width="10" />
-
-            <!-- Inner Black Guitar-Pick / Teardrop Shape pointing down -->
-            <path d="M 250,90
-                     C 345,90 412,162 412,252
-                     C 412,332 342,395 250,468
-                     C 158,395 88,332 88,252
-                     C 88,162 155,90 250,90 Z" 
-                  fill="#000000" />
-
-            <!-- Headphone Outer Double Bands -->
-            <path d="M 56,215 A 196,196 0 0,1 444,215" fill="none" stroke="#000000" stroke-width="14" stroke-linecap="round" />
-            <path d="M 84,195 A 168,168 0 0,1 368,125" fill="none" stroke="#000000" stroke-width="13" stroke-linecap="round" />
-
-            <!-- Left Headphone Earcup -->
-            <rect x="28" y="192" width="60" height="125" rx="28" fill="#000000" />
-            <rect x="63" y="210" width="8" height="58" rx="4" fill="#FFFFFF" />
-
-            <!-- Right Headphone Earcup -->
-            <rect x="412" y="192" width="60" height="125" rx="28" fill="#000000" />
-            <rect x="429" y="236" width="8" height="58" rx="4" fill="#FFFFFF" />
-
-            <!-- Center Glowing Yellow Circle -->
-            <circle cx="250" cy="252" r="82" fill="url(#innerYellowGrad)" />
-
-            <!-- White Separator Dots -->
-            <circle cx="129" cy="260" r="8" fill="#FFFFFF" />
-            <circle cx="371" cy="260" r="8" fill="#FFFFFF" />
-
-            <!-- Curved Top Text: CITIZEN -->
-            <text fill="#FFEA00" stroke="#222222" stroke-width="2" font-family="'Inter', 'Arial Black', sans-serif" font-weight="900" font-size="60" letter-spacing="5">
-                <textPath href="#textPathTop" startOffset="50%" text-anchor="middle">CITIZEN</textPath>
-            </text>
-
-            <!-- Center Number: 593 -->
-            <text x="250" y="284" text-anchor="middle" fill="#0055A4" font-family="'Chakra Petch', 'Impact', sans-serif" font-weight="800" font-size="92" letter-spacing="-2">593</text>
-
-            <!-- Curved Bottom Text: RADIO - PODCAST -->
-            <text fill="#FFEA00" font-family="'Inter', sans-serif" font-weight="700" font-size="31" letter-spacing="2.5">
-                <textPath href="#textPathBottom" startOffset="50%" text-anchor="middle">RADIO - PODCAST</textPath>
-            </text>
-
-            <!-- Microphone Boom Cable from Right Earcup -->
-            <path d="M 432,306 Q 405,408 265,420" fill="none" stroke="#FFFFFF" stroke-width="14" stroke-linecap="round" />
-            <path d="M 432,306 Q 405,408 265,420" fill="none" stroke="#000000" stroke-width="5" stroke-linecap="round" />
-
-            <!-- Red Microphone Capsule -->
-            <rect x="216" y="398" width="68" height="40" rx="20" fill="#E60000" stroke="#000000" stroke-width="2" />
-        </svg>
-    </template>
-
-    <!-- TOP HEADER BAR -->
-    <header class="sticky top-0 z-40 bg-citizen-dark/90 backdrop-blur-xl border-b border-citizen-border px-3 py-2 sm:px-6">
-        <div class="max-w-7xl mx-auto flex items-center justify-between gap-2">
-            <!-- Brand Identity (Logo Protagonist with flex-shrink-0) -->
-            <div class="flex items-center gap-2.5 flex-shrink-0">
-                <a href="https://radiocitizen593.com/" target="_self" onclick="window.location.assign('https://radiocitizen593.com/');" title="Ir a radiocitizen593.com" aria-label="Ir al sitio web oficial radiocitizen593.com" class="w-10 h-10 sm:w-12 sm:h-12 rounded-full flex-shrink-0 p-0.5 bg-gradient-to-tr from-citizen-yellow via-citizen-blue to-citizen-red shadow-lg shadow-citizen-yellow/10 hover:scale-105 active:scale-95 transition-transform cursor-pointer block focus:outline-none focus:ring-2 focus:ring-citizen-yellow">
-                    <div class="w-full h-full rounded-full overflow-hidden bg-black flex items-center justify-center flex-shrink-0 logo-slot">
-                        <img src="593-LOGO2.png" alt="Logo Oficial" class="w-full h-full object-cover flex-shrink-0" onerror="replaceWithSvgLogo(this)">
-                    </div>
-                </a>
-                <div class="flex flex-col justify-center cursor-pointer" onclick="switchTab('live')">
-                    <div class="flex items-center gap-1.5">
-                        <span class="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-citizen-red/20 text-citizen-red border border-citizen-red/40">
-                            <span class="w-1.5 h-1.5 rounded-full bg-citizen-red animate-ping"></span>
-                            ON AIR
-                        </span>
-                        <span class="hidden sm:inline-block text-[11px] font-bold text-citizen-yellow tracking-wide">SEÑAL OFICIAL 24/7</span>
-                    </div>
-                    <p class="text-[11px] text-slate-300 font-medium mt-0.5">Desde Ecuador para el Mundo 🇪🇨</p>
-                </div>
-            </div>
-
-            <!-- Desktop Navigation Pills -->
-            <nav class="hidden md:flex items-center gap-1 bg-citizen-card p-1 rounded-2xl border border-citizen-border">
-                <button onclick="switchTab('live')" id="nav-desk-live" class="tab-btn-desk px-3.5 py-1.5 rounded-xl text-xs lg:text-sm font-bold transition-all bg-citizen-yellow text-black shadow-md">
-                    <i class="fa-solid fa-compact-disc mr-1.5"></i>Reproductor Luna
-                </button>
-                <button onclick="switchTab('podcasts')" id="nav-desk-podcasts" class="tab-btn-desk px-3.5 py-1.5 rounded-xl text-xs lg:text-sm font-semibold text-slate-300 hover:text-white transition-all">
-                    <i class="fa-solid fa-microphone-lines mr-1.5"></i>Podcasts
-                </button>
-                <button onclick="switchTab('schedule')" id="nav-desk-schedule" class="tab-btn-desk px-3.5 py-1.5 rounded-xl text-xs lg:text-sm font-semibold text-slate-300 hover:text-white transition-all">
-                    <i class="fa-regular fa-calendar-days mr-1.5"></i>Programación
-                </button>
-                <button onclick="switchTab('contact')" id="nav-desk-contact" class="tab-btn-desk px-3.5 py-1.5 rounded-xl text-xs lg:text-sm font-semibold text-slate-300 hover:text-white transition-all">
-                    <i class="fa-brands fa-whatsapp mr-1.5"></i>Cabina
-                </button>
-            </nav>
-
-            <!-- Action Buttons (Share & Direct WhatsApp) -->
-            <div class="flex items-center gap-2 flex-shrink-0">
-                <button onclick="openWhatsAppDirect()" class="flex items-center gap-1.5 px-3 py-1.5 sm:px-3.5 sm:py-2 rounded-xl bg-[#25D366]/20 hover:bg-[#25D366]/30 border border-[#25D366]/50 text-xs font-bold text-[#25D366] transition-all" title="Escribir a Cabina por WhatsApp">
-                    <i class="fa-brands fa-whatsapp text-sm sm:text-base"></i>
-                    <span class="hidden xs:inline sm:inline">Cabina 593</span>
-                </button>
-                <button onclick="shareRadio()" class="w-9 h-9 rounded-xl bg-black/40 hover:bg-black/60 border border-citizen-border flex items-center justify-center text-slate-200 hover:text-citizen-yellow transition-all" title="Compartir Radio">
-                    <i class="fa-solid fa-share-nodes text-sm"></i>
-                </button>
-                <button onclick="handleAdminAccess()" id="header-admin-btn" class="w-9 h-9 rounded-xl bg-black/40 hover:bg-citizen-yellow/20 border border-citizen-border hover:border-citizen-yellow flex items-center justify-center text-slate-200 hover:text-citizen-yellow transition-all" title="Panel de Administración">
-                    <i id="header-admin-icon" class="fa-solid fa-lock text-xs"></i>
-                </button>
-            </div>
-        </div>
-    </header>
-
-    <!-- MAIN CONTENT CONTAINER -->
-    <main class="flex-1 max-w-7xl w-full mx-auto px-3 py-3 sm:px-6 sm:py-4 pb-32 md:pb-20">
-
-        <!-- ==========================================
-             TAB 1: LUNA RADIO PLAYER (EN VIVO)
-             ========================================== -->
-        <section id="tab-live" class="tab-section space-y-3 sm:space-y-4">
-            <div class="grid grid-cols-1 lg:grid-cols-12 gap-3 sm:gap-4 items-start">
-
-                <!-- LEFT / CENTER: MAIN LUNA UNIVERSE PLAYER CARD (7 cols on desktop) -->
-                <div class="lg:col-span-7">
-                    <div class="luna-container relative rounded-3xl border border-citizen-border overflow-hidden p-4 sm:p-5">
-                        
-                        <!-- Ambient Top Bar inside Luna Player -->
-                        <div class="flex items-center justify-between gap-2 mb-3 relative z-10">
-                            <div class="flex items-center gap-1.5 sm:gap-2">
-                                <span id="live-status-badge" class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-extrabold uppercase tracking-wider bg-citizen-red text-white shadow-lg shadow-citizen-red/30">
-                                    <span class="w-2 h-2 rounded-full bg-white animate-pulse"></span>
-                                    <span id="player-mode-label">EN VIVO • LUNA PLAYER</span>
-                                </span>
-                                <span class="hidden sm:inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-semibold bg-white/5 text-slate-300 border border-white/10">
-                                    <i class="fa-solid fa-tower-broadcast text-citizen-yellow text-[10px]"></i>
-                                    <span id="stream-quality-badge">128 kbps AAC+</span>
-                                </span>
-                            </div>
-
-                            <!-- Listener Counter & Sleep Timer -->
-                            <div class="flex items-center gap-1.5 sm:gap-2">
-                                <div class="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-black/50 border border-white/10 text-[11px] font-semibold text-slate-300" title="Oyentes conectados">
-                                    <i class="fa-solid fa-headphones text-citizen-yellow"></i>
-                                    <span id="listener-count">418</span>
-                                </div>
-                                <button onclick="toggleSleepTimer()" id="sleep-timer-btn" class="px-2.5 py-1 rounded-full bg-black/50 hover:bg-white/10 border border-white/10 text-[11px] font-semibold text-slate-300 transition-all" title="Temporizador de apagado">
-                                    <i class="fa-regular fa-clock"></i>
-                                    <span id="sleep-timer-label" class="hidden sm:inline ml-1">Timer</span>
-                                </button>
-                            </div>
-                        </div>
-
-                        <!-- NATIVE LUNA PLAYER -->
-                        <div id="native-luna-view">
-                            <!-- CENTRAL CIRCULAR LUNA TURNTABLE + VERTICAL VOLUME CONTROL -->
-                            <div class="flex items-center justify-center gap-3 sm:gap-6 my-1">
-                                <!-- Rotating Disc & Radial Spectrum -->
-                                <div class="relative w-48 h-48 sm:w-64 sm:h-64 flex items-center justify-center flex-shrink-0">
-                                    <!-- Radial Audio Spectrum Canvas -->
-                                    <canvas id="luna-radial-canvas" width="360" height="360" class="absolute inset-0 w-full h-full pointer-events-none"></canvas>
-
-                                    <!-- Outer Glowing Ring -->
-                                    <div id="luna-disc-ring" class="luna-disc-ring relative w-36 h-36 sm:w-48 sm:h-48 rounded-full p-1.5 bg-gradient-to-b from-citizen-yellow via-citizen-blue to-citizen-red flex items-center justify-center flex-shrink-0">
-                                        <!-- Rotating Logo Artwork -->
-                                        <div id="luna-vinyl" class="vinyl-spin w-full h-full rounded-full overflow-hidden bg-black relative shadow-2xl flex items-center justify-center flex-shrink-0 logo-slot">
-                                            <img src="593-LOGO2.png" alt="Logo Radio" class="w-full h-full object-cover flex-shrink-0" onerror="replaceWithSvgLogo(this)">
-                                        </div>
-
-                                        <!-- Center Play/Pause Overlay Button on Turntable -->
-                                        <button onclick="togglePlay()" aria-label="Reproducir o Pausar" class="absolute w-11 h-11 sm:w-14 sm:h-14 rounded-full bg-black/80 hover:bg-citizen-yellow text-citizen-yellow hover:text-black border-2 border-citizen-yellow flex items-center justify-center transition-all duration-300 shadow-xl group z-20 flex-shrink-0">
-                                            <i id="center-play-icon" class="fa-solid fa-play text-base sm:text-xl ml-0.5 group-hover:scale-110 transition-transform"></i>
-                                        </button>
-                                    </div>
-                                </div>
-
-                                <!-- VERTICAL VOLUME CONTROL NEXT TO ROTATING LOGO -->
-                                <div class="flex flex-col items-center justify-between py-2.5 px-2 sm:px-2.5 rounded-2xl bg-black/55 border border-white/10 shadow-lg flex-shrink-0 select-none">
-                                    <span id="volume-value" class="text-[10px] sm:text-xs font-extrabold text-citizen-yellow tracking-tight">85%</span>
-                                    <div class="luna-vertical-slider-wrap my-1">
-                                        <input id="volume-slider" type="range" min="0" max="100" value="85" aria-label="Control de volumen" class="luna-slider luna-slider-vertical" oninput="changeVolume(this.value)">
-                                    </div>
-                                    <button onclick="toggleMute()" class="w-7 h-7 sm:w-8 sm:h-8 rounded-xl bg-white/5 hover:bg-white/10 text-slate-300 hover:text-citizen-yellow flex items-center justify-center transition-colors flex-shrink-0" title="Silenciar / Activar audio">
-                                        <i id="volume-icon" class="fa-solid fa-volume-high text-xs sm:text-sm"></i>
-                                    </button>
-                                </div>
-                            </div>
-
-                            <!-- CURRENT SHOW BADGE (COMPACT) -->
-                            <div class="text-center mt-1 relative z-10">
-                                <div id="current-show-badge" class="hidden items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-citizen-blue/25 border border-citizen-blue/50 text-citizen-yellow text-[11px] font-bold uppercase tracking-wider">
-                                    <i class="fa-solid fa-microphone"></i>
-                                    <span id="current-show-title"></span>
-                                </div>
-                            </div>
-
-                            <!-- BOTTOM BAR SPECTRUM WAVEFORM -->
-                            <div class="mt-2 mb-2.5 h-10 w-full bg-black/40 rounded-2xl border border-white/5 px-3 py-1 flex items-center justify-center overflow-hidden">
-                                <canvas id="luna-bar-canvas" width="600" height="40" class="w-full h-full"></canvas>
-                            </div>
-
-                            <!-- LUNA CONTROLS DECK (Play, Like, Live Return) -->
-                            <div class="bg-black/60 backdrop-blur-md rounded-2xl p-2.5 sm:p-3 border border-white/10 flex items-center justify-center">
-                                <!-- Primary Transport Controls -->
-                                <div class="flex items-center justify-center gap-3 w-full">
-                                    <button onclick="returnToLiveStream()" id="btn-return-live" class="px-3.5 py-2 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 text-xs font-bold text-slate-300 hover:text-citizen-yellow transition-all flex items-center gap-1.5" title="Volver a la señal en vivo">
-                                        <i class="fa-solid fa-rotate-right"></i>
-                                        <span>Señal Vivo</span>
-                                    </button>
-
-                                    <button onclick="togglePlay()" id="main-play-btn" class="w-12 h-12 rounded-2xl bg-citizen-yellow hover:bg-citizen-gold text-black font-black flex items-center justify-center shadow-lg shadow-citizen-yellow/25 hover:scale-105 active:scale-95 transition-all flex-shrink-0">
-                                        <i id="main-play-icon" class="fa-solid fa-play text-xl ml-0.5"></i>
-                                    </button>
-
-                                    <button onclick="likeCurrentTrack()" id="like-track-btn" class="w-10 h-10 rounded-xl bg-white/5 hover:bg-citizen-red/20 border border-white/10 hover:border-citizen-red/40 text-slate-300 hover:text-citizen-red flex items-center justify-center transition-all flex-shrink-0" title="Me gusta esta transmisión">
-                                        <i class="fa-solid fa-heart"></i>
-                                    </button>
-                                </div>
-                            </div>
-                        </div>
-
-                    </div>
-                </div>
-
-                <!-- RIGHT COLUMN: RECENT TRACKS HISTORY & QUICK INTERACTION (5 cols on desktop) -->
-                <div class="lg:col-span-5 space-y-3 sm:space-y-4">
-                    
-                    <!-- Cabina Directa Banner -->
-                    <div class="rounded-3xl bg-gradient-to-r from-citizen-blue/40 via-citizen-card to-citizen-card border border-citizen-blue/40 p-4 flex items-center justify-between gap-3">
-                        <div class="space-y-0.5">
-                            <span class="text-[10px] font-extrabold uppercase tracking-wider text-citizen-yellow">Cabina Interactiva 593</span>
-                            <h3 class="text-sm sm:text-base font-extrabold text-white leading-snug">¿Quieres pedir un tema o enviar un saludo?</h3>
-                            <p class="text-xs text-slate-300">Escríbenos en directo a cabina o envía tu audio.</p>
-                        </div>
-                        <button onclick="switchTab('contact')" class="px-3.5 py-2.5 rounded-2xl bg-[#25D366] hover:bg-[#20bd5a] text-black font-extrabold text-xs flex items-center gap-1.5 flex-shrink-0 shadow-lg shadow-[#25D366]/20 transition-all">
-                            <i class="fa-brands fa-whatsapp text-base"></i>
-                            <span>Cabina</span>
-                        </button>
-                    </div>
-
-                    <!-- Luna Track History / Recently Played -->
-                    <div class="bg-citizen-card rounded-3xl border border-citizen-border p-4">
-                        <div class="flex items-center justify-between mb-2.5">
-                            <div class="flex items-center gap-2">
-                                <span class="w-2 h-2 rounded-full bg-citizen-yellow"></span>
-                                <h3 class="font-bold text-xs sm:text-sm text-white uppercase tracking-wider">Historial de Reproducción</h3>
-                            </div>
-                            <span class="text-[11px] text-slate-400 font-medium">Luna MetaData</span>
-                        </div>
-
-                        <div id="track-history-list" class="space-y-2">
-                            <!-- Populated via JS -->
-                        </div>
-                    </div>
-
-                    <!-- Official Live Signal Status Card -->
-                    <div class="bg-citizen-card rounded-3xl border border-citizen-border p-4">
-                        <div class="flex items-center justify-between mb-2">
-                            <h3 class="font-bold text-xs sm:text-sm text-white uppercase tracking-wider flex items-center gap-2">
-                                <i class="fa-solid fa-satellite-dish text-citizen-yellow"></i>
-                                Señal Oficial en Directo
-                            </h3>
-                            <span class="text-[10px] font-bold text-citizen-yellow bg-citizen-yellow/10 px-2 py-0.5 rounded-md border border-citizen-yellow/20">HD 24/7</span>
-                        </div>
-                        <div class="p-3 rounded-2xl border border-citizen-yellow/40 bg-black/40 flex items-center justify-between gap-3">
-                            <div class="min-w-0">
-                                <div id="active-stream-label" class="text-xs sm:text-sm font-extrabold text-citizen-yellow truncate">Señal Oficial en Vivo • HD</div>
-                                <div class="text-[11px] text-slate-300 truncate">Streaming Oficial 24/7 • Quito, Ecuador 🇪🇨</div>
-                            </div>
-                            <button onclick="returnToLiveStream()" class="px-3 py-2 rounded-xl bg-citizen-yellow hover:bg-citizen-gold text-black font-extrabold text-xs flex items-center gap-1.5 flex-shrink-0 shadow-md transition-all">
-                                <i class="fa-solid fa-tower-broadcast"></i>
-                                <span>Sintonizar</span>
-                            </button>
-                        </div>
-                    </div>
-
-                </div>
-            </div>
-        </section>
-
-        <!-- ==========================================
-             TAB 2: PODCASTS
-             ========================================== -->
-        <section id="tab-podcasts" class="tab-section hidden space-y-3 sm:space-y-4">
-            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-citizen-card p-4 sm:p-5 rounded-3xl border border-citizen-border">
-                <div class="space-y-0.5">
-                    <span class="text-[11px] font-extrabold uppercase tracking-widest text-citizen-yellow">Episodios On-Demand</span>
-                    <h2 class="text-xl sm:text-2xl font-black text-white">Episodios & Podcasts</h2>
-                    <p class="text-xs sm:text-sm text-slate-300">Escucha nuestras entrevistas, análisis ciudadano, cultura y música ecuatoriana cuando quieras.</p>
-                </div>
-                <div class="flex items-center gap-2 flex-shrink-0">
-                    <span class="px-3 py-1.5 rounded-xl bg-black/60 border border-citizen-border text-xs font-bold text-slate-300">
-                        <i class="fa-solid fa-podcast text-citizen-red mr-1.5"></i>Temporada 2026
-                    </span>
-                </div>
-            </div>
-
-            <!-- Podcast Episodes Grid -->
-            <div id="podcast-grid" class="grid grid-cols-1 md:grid-cols-2 gap-3 sm:gap-4">
-                <!-- Populated dynamically via JS -->
-            </div>
-        </section>
-
-        <!-- ==========================================
-             TAB 3: PROGRAMACIÓN (SCHEDULE)
-             ========================================== -->
-        <section id="tab-schedule" class="tab-section hidden space-y-3 sm:space-y-4">
-            <div class="bg-citizen-card p-4 sm:p-5 rounded-3xl border border-citizen-border flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-                <div class="space-y-0.5">
-                    <span class="text-[11px] font-extrabold uppercase tracking-widest text-citizen-yellow">Parrilla Oficial (Hora Ecuador GMT-5)</span>
-                    <h2 class="text-xl sm:text-2xl font-black text-white">Programación Semanal</h2>
-                    <p class="text-xs sm:text-sm text-slate-300">Conoce los horarios de tus programas y locutores favoritos.</p>
-                </div>
-                <!-- Day Filter Pills -->
-                <div class="flex items-center gap-1 bg-black/50 p-1 rounded-2xl border border-citizen-border self-start">
-                    <button onclick="filterSchedule('weekdays')" id="sched-weekdays" class="px-3 py-1.5 rounded-xl text-xs font-bold bg-citizen-yellow text-black transition-all">Lunes a Viernes</button>
-                    <button onclick="filterSchedule('weekend')" id="sched-weekend" class="px-3 py-1.5 rounded-xl text-xs font-bold text-slate-300 hover:text-white transition-all">Fin de Semana</button>
-                </div>
-            </div>
-
-            <div id="schedule-list" class="grid grid-cols-1 md:grid-cols-2 gap-3">
-                <!-- Populated dynamically via JS -->
-            </div>
-        </section>
-
-        <!-- ==========================================
-             TAB 4: CONTACTO Y CABINA EN VIVO
-             ========================================== -->
-        <section id="tab-contact" class="tab-section hidden space-y-3 sm:space-y-4">
-            <div class="grid grid-cols-1 lg:grid-cols-12 gap-3 sm:gap-4">
-                
-                <!-- Left: Send Message to Booth -->
-                <div class="lg:col-span-7 bg-citizen-card rounded-3xl border border-citizen-border p-4 sm:p-6 space-y-4">
-                    <div class="flex items-center gap-3">
-                        <div class="w-10 h-10 sm:w-11 sm:h-11 rounded-2xl bg-citizen-yellow/15 border border-citizen-yellow/40 flex items-center justify-center text-citizen-yellow flex-shrink-0">
-                            <i class="fa-solid fa-comments text-lg"></i>
-                        </div>
-                        <div>
-                            <h2 class="text-lg sm:text-xl font-black text-white">Cabina en Vivo 593</h2>
-                            <p class="text-xs text-slate-300">Envía tu saludo, denuncia ciudadana o pide tu canción directamente a los locutores.</p>
-                        </div>
-                    </div>
-
-                    <form onsubmit="sendCabinMessage(event)" class="space-y-3">
-                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                            <div>
-                                <label class="block text-[11px] font-bold uppercase text-slate-300 mb-1">Tu Nombre *</label>
-                                <input type="text" id="msg-name" required placeholder="Ej: Carlos Andrade" class="w-full px-3.5 py-2.5 rounded-xl bg-black/60 border border-citizen-border focus:border-citizen-yellow focus:outline-none text-sm text-white">
-                            </div>
-                            <div>
-                                <label class="block text-[11px] font-bold uppercase text-slate-300 mb-1">Ciudad / País *</label>
-                                <input type="text" id="msg-city" required placeholder="Ej: Quito, Ecuador / Madrid" class="w-full px-3.5 py-2.5 rounded-xl bg-black/60 border border-citizen-border focus:border-citizen-yellow focus:outline-none text-sm text-white">
-                            </div>
-                        </div>
-
-                        <div>
-                            <label class="block text-[11px] font-bold uppercase text-slate-300 mb-1">Tipo de Mensaje</label>
-                            <select id="msg-type" class="w-full px-3.5 py-2.5 rounded-xl bg-black/60 border border-citizen-border focus:border-citizen-yellow focus:outline-none text-sm text-white">
-                                <option value="Saludo en Vivo">👋 Saludo en Vivo</option>
-                                <option value="Pedido Musical">🎵 Pedido Musical</option>
-                                <option value="Reporte Ciudadano 593">📢 Reporte / Opinión Ciudadana</option>
-                                <option value="Propuesta de Podcast / Publicidad">🎙️ Pauta Publicitaria / Podcast</option>
-                            </select>
-                        </div>
-
-                        <div>
-                            <label class="block text-[11px] font-bold uppercase text-slate-300 mb-1">Tu Mensaje o Canción *</label>
-                            <textarea id="msg-content" rows="2" required placeholder="Escribe aquí tu saludo o el tema que deseas escuchar..." class="w-full px-3.5 py-2.5 rounded-xl bg-black/60 border border-citizen-border focus:border-citizen-yellow focus:outline-none text-sm text-white"></textarea>
-                        </div>
-
-                        <div class="flex flex-col sm:flex-row gap-2.5 pt-1">
-                            <button type="submit" class="flex-1 py-3 px-5 rounded-xl bg-citizen-yellow hover:bg-citizen-gold text-black font-extrabold text-xs sm:text-sm flex items-center justify-center gap-2 shadow-lg shadow-citizen-yellow/20 transition-all">
-                                <i class="fa-solid fa-paper-plane"></i>
-                                <span>Publicar en Muro de Cabina</span>
-                            </button>
-                            <button type="button" onclick="openWhatsAppDirect()" class="py-3 px-5 rounded-xl bg-[#25D366] hover:bg-[#1ebe57] text-black font-extrabold text-xs sm:text-sm flex items-center justify-center gap-2 transition-all">
-                                <i class="fa-brands fa-whatsapp text-base"></i>
-                                <span>Enviar por WhatsApp</span>
-                            </button>
-                        </div>
-                    </form>
-                </div>
-
-                <!-- Right: Live Listener Wall & Social Networks -->
-                <div class="lg:col-span-5 space-y-3 sm:space-y-4">
-                    <!-- Live Messages Wall -->
-                    <div class="bg-citizen-card rounded-3xl border border-citizen-border p-4 sm:p-5">
-                        <div class="flex items-center justify-between mb-3">
-                            <h3 class="font-bold text-xs sm:text-sm uppercase tracking-wider text-citizen-yellow flex items-center gap-2">
-                                <span class="w-2 h-2 rounded-full bg-green-400 animate-ping"></span>
-                                Mensajes Recientes en Cabina
-                            </h3>
-                            <span class="text-[11px] text-slate-400">En directo</span>
-                        </div>
-                        <div id="cabin-wall-list" class="space-y-2.5 max-h-60 overflow-y-auto pr-1">
-                            <!-- Populated by JS -->
-                        </div>
-                    </div>
-
-                    <!-- Social Links & Station Info -->
-                    <div class="bg-citizen-card rounded-3xl border border-citizen-border p-4 sm:p-5 space-y-3">
-                        <h3 class="font-bold text-xs sm:text-sm uppercase tracking-wider text-white">Síguenos en Redes Oficiales</h3>
-                        <div class="grid grid-cols-2 gap-2.5">
-                            <a href="#facebook" onclick="showToast('Abriendo página oficial de Facebook'); return false;" class="flex items-center gap-2.5 p-2.5 rounded-2xl bg-black/50 hover:bg-[#1877F2]/20 border border-citizen-border hover:border-[#1877F2] transition-all">
-                                <i class="fa-brands fa-facebook text-lg text-[#1877F2]"></i>
-                                <span class="text-xs font-bold">Facebook</span>
-                            </a>
-                            <a href="#instagram" onclick="showToast('Abriendo Instagram oficial'); return false;" class="flex items-center gap-2.5 p-2.5 rounded-2xl bg-black/50 hover:bg-[#E4405F]/20 border border-citizen-border hover:border-[#E4405F] transition-all">
-                                <i class="fa-brands fa-instagram text-lg text-[#E4405F]"></i>
-                                <span class="text-xs font-bold">Instagram</span>
-                            </a>
-                            <a href="#youtube" onclick="showToast('Abriendo canal oficial de YouTube'); return false;" class="flex items-center gap-2.5 p-2.5 rounded-2xl bg-black/50 hover:bg-[#FF0000]/20 border border-citizen-border hover:border-[#FF0000] transition-all">
-                                <i class="fa-brands fa-youtube text-lg text-[#FF0000]"></i>
-                                <span class="text-xs font-bold">YouTube</span>
-                            </a>
-                            <a href="#tiktok" onclick="showToast('Abriendo TikTok oficial'); return false;" class="flex items-center gap-2.5 p-2.5 rounded-2xl bg-black/50 hover:bg-white/10 border border-citizen-border hover:border-citizen-yellow transition-all">
-                                <i class="fa-brands fa-tiktok text-lg text-citizen-yellow"></i>
-                                <span class="text-xs font-bold">TikTok</span>
-                            </a>
-                        </div>
-                    </div>
-                </div>
-
-            </div>
-        </section>
-
-        <!-- ==========================================
-             TAB 5: PANEL DE ADMINISTRACIÓN (SOLO ADMIN)
-             ========================================== -->
-        <section id="tab-admin" class="tab-section hidden space-y-4">
-            <!-- Top Admin Bar -->
-            <div class="bg-citizen-card p-4 sm:p-5 rounded-3xl border border-citizen-yellow/40 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-                <div class="flex items-center gap-3">
-                    <div class="w-11 h-11 rounded-2xl bg-citizen-yellow text-black flex items-center justify-center font-black text-lg flex-shrink-0 shadow-lg">
-                        <i class="fa-solid fa-sliders"></i>
-                    </div>
-                    <div>
-                        <div class="flex items-center gap-2">
-                            <span class="px-2 py-0.5 rounded-md bg-citizen-yellow/20 text-citizen-yellow text-[10px] font-black uppercase tracking-wider border border-citizen-yellow/30">Modo Administrador Activo</span>
-                        </div>
-                        <h2 class="text-lg sm:text-xl font-black text-white mt-0.5">Consola Administrable Citizen 593</h2>
-                        <p class="text-xs text-slate-300">Edita el streaming, marquesina, podcasts, programación, historial y mensajes en vivo.</p>
-                    </div>
-                </div>
-                <div class="flex items-center gap-2 self-start sm:self-center">
-                    <button onclick="switchTab('live')" class="px-3.5 py-2 rounded-xl bg-white/10 hover:bg-white/15 text-xs font-bold text-white transition-all flex items-center gap-1.5">
-                        <i class="fa-solid fa-eye"></i>
-                        <span>Ver Radio</span>
-                    </button>
-                    <button onclick="logoutAdmin()" class="px-3.5 py-2 rounded-xl bg-citizen-red hover:bg-red-700 text-xs font-extrabold text-white transition-all flex items-center gap-1.5 shadow-lg">
-                        <i class="fa-solid fa-right-from-bracket"></i>
-                        <span>Cerrar Sesión</span>
-                    </button>
-                </div>
-            </div>
-
-            <!-- Admin Modules Grid -->
-            <div class="grid grid-cols-1 lg:grid-cols-12 gap-4">
-
-                <!-- 1. CONFIGURACIÓN GENERAL Y STREAMING (6 cols) -->
-                <div class="lg:col-span-6 bg-citizen-card rounded-3xl border border-citizen-border p-4 sm:p-5 space-y-3">
-                    <h3 class="text-sm font-black uppercase tracking-wider text-citizen-yellow flex items-center gap-2">
-                        <i class="fa-solid fa-tower-broadcast"></i>
-                        1. Señal en Vivo, Marquesina y WhatsApp
-                    </h3>
-                    <form onsubmit="saveGeneralAdminConfig(event)" class="space-y-3">
-                        <div>
-                            <label class="block text-[11px] font-bold uppercase text-slate-300 mb-1">URL del Stream de Audio (Zeno / Icecast / Shoutcast)</label>
-                            <input type="url" id="adm-stream-url" required class="w-full px-3.5 py-2 rounded-xl bg-black/60 border border-citizen-border focus:border-citizen-yellow focus:outline-none text-xs sm:text-sm text-white">
-                        </div>
-                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                            <div>
-                                <label class="block text-[11px] font-bold uppercase text-slate-300 mb-1">Título de Señal Activa</label>
-                                <input type="text" id="adm-stream-name" required class="w-full px-3.5 py-2 rounded-xl bg-black/60 border border-citizen-border focus:border-citizen-yellow focus:outline-none text-xs sm:text-sm text-white">
-                            </div>
-                            <div>
-                                <label class="block text-[11px] font-bold uppercase text-slate-300 mb-1">Calidad / Bitrate Badge</label>
-                                <input type="text" id="adm-stream-bitrate" required class="w-full px-3.5 py-2 rounded-xl bg-black/60 border border-citizen-border focus:border-citizen-yellow focus:outline-none text-xs sm:text-sm text-white">
-                            </div>
-                        </div>
-                        <div>
-                            <label class="block text-[11px] font-bold uppercase text-slate-300 mb-1">Texto de la Marquesina Inferior</label>
-                            <input type="text" id="adm-marquee" required class="w-full px-3.5 py-2 rounded-xl bg-black/60 border border-citizen-border focus:border-citizen-yellow focus:outline-none text-xs sm:text-sm text-white">
-                        </div>
-                        <div>
-                            <label class="block text-[11px] font-bold uppercase text-slate-300 mb-1">Número de WhatsApp Cabina (con código de país, sin +)</label>
-                            <input type="text" id="adm-whatsapp" required placeholder="593999999999" class="w-full px-3.5 py-2 rounded-xl bg-black/60 border border-citizen-border focus:border-citizen-yellow focus:outline-none text-xs sm:text-sm text-white">
-                        </div>
-                        <button type="submit" class="w-full py-2.5 rounded-xl bg-citizen-yellow hover:bg-citizen-gold text-black font-extrabold text-xs sm:text-sm transition-all shadow-md">
-                            <i class="fa-solid fa-floppy-disk mr-1.5"></i>Guardar y Actualizar Señal en Vivo
-                        </button>
-                    </form>
-                </div>
-
-                <!-- 2. HISTORIAL DE TEMAS Y CREDENCIALES DE ACCESO (6 cols) -->
-                <div class="lg:col-span-6 space-y-4">
-                    <!-- Historial de Reproducción -->
-                    <div class="bg-citizen-card rounded-3xl border border-citizen-border p-4 sm:p-5 space-y-3">
-                        <h3 class="text-sm font-black uppercase tracking-wider text-citizen-yellow flex items-center gap-2">
-                            <i class="fa-solid fa-music"></i>
-                            2. Actualizar Tema "Al Aire" / Historial
-                        </h3>
-                        <form onsubmit="addAdminTrackHistory(event)" class="grid grid-cols-1 sm:grid-cols-12 gap-2">
-                            <input type="text" id="adm-track-title" required placeholder="Título del tema o programa" class="sm:col-span-5 px-3 py-2 rounded-xl bg-black/60 border border-citizen-border text-xs text-white focus:border-citizen-yellow focus:outline-none">
-                            <input type="text" id="adm-track-artist" required placeholder="Artista / Locutor" class="sm:col-span-4 px-3 py-2 rounded-xl bg-black/60 border border-citizen-border text-xs text-white focus:border-citizen-yellow focus:outline-none">
-                            <button type="submit" class="sm:col-span-3 py-2 px-3 rounded-xl bg-citizen-yellow hover:bg-citizen-gold text-black font-extrabold text-xs transition-all">
-                                <i class="fa-solid fa-plus mr-1"></i>Publicar
-                            </button>
-                        </form>
-                        <div id="adm-history-list" class="space-y-1.5 max-h-40 overflow-y-auto pr-1"></div>
-                    </div>
-
-                    <!-- Credenciales del Administrador -->
-                    <div class="bg-citizen-card rounded-3xl border border-citizen-border p-4 sm:p-5 space-y-3">
-                        <h3 class="text-sm font-black uppercase tracking-wider text-citizen-yellow flex items-center gap-2">
-                            <i class="fa-solid fa-user-shield"></i>
-                            3. Credenciales de Administrador
-                        </h3>
-                        <form onsubmit="updateAdminCredentials(event)" class="grid grid-cols-1 sm:grid-cols-12 gap-2 items-end">
-                            <div class="sm:col-span-4">
-                                <label class="block text-[10px] font-bold uppercase text-slate-300 mb-1">Nuevo Usuario</label>
-                                <input type="text" id="adm-cred-user" required class="w-full px-3 py-2 rounded-xl bg-black/60 border border-citizen-border text-xs text-white focus:border-citizen-yellow focus:outline-none">
-                            </div>
-                            <div class="sm:col-span-5">
-                                <label class="block text-[10px] font-bold uppercase text-slate-300 mb-1">Nueva Clave</label>
-                                <input type="password" id="adm-cred-pass" required placeholder="Nueva contraseña" class="w-full px-3 py-2 rounded-xl bg-black/60 border border-citizen-border text-xs text-white focus:border-citizen-yellow focus:outline-none">
-                            </div>
-                            <button type="submit" class="sm:col-span-3 py-2 px-3 rounded-xl bg-white/10 hover:bg-citizen-yellow hover:text-black text-white font-extrabold text-xs border border-white/15 transition-all">
-                                Cambiar Clave
-                            </button>
-                        </form>
-                    </div>
-                </div>
-
-                <!-- 3. ADMINISTRAR PODCASTS ON-DEMAND (6 cols) -->
-                <div class="lg:col-span-6 bg-citizen-card rounded-3xl border border-citizen-border p-4 sm:p-5 space-y-3">
-                    <h3 class="text-sm font-black uppercase tracking-wider text-citizen-yellow flex items-center gap-2">
-                        <i class="fa-solid fa-podcast"></i>
-                        4. Administrar Episodios de Podcast
-                    </h3>
-                    <form onsubmit="addAdminPodcast(event)" class="space-y-2.5 bg-black/40 p-3 rounded-2xl border border-white/5">
-                        <div class="grid grid-cols-3 gap-2">
-                            <input type="text" id="adm-pod-ep" required placeholder="Ej: EP. 43" class="px-3 py-2 rounded-xl bg-black/60 border border-citizen-border text-xs text-white focus:border-citizen-yellow focus:outline-none">
-                            <input type="text" id="adm-pod-duration" required placeholder="Ej: 40 min" class="px-3 py-2 rounded-xl bg-black/60 border border-citizen-border text-xs text-white focus:border-citizen-yellow focus:outline-none">
-                            <input type="text" id="adm-pod-date" required placeholder="Ej: Hoy" class="px-3 py-2 rounded-xl bg-black/60 border border-citizen-border text-xs text-white focus:border-citizen-yellow focus:outline-none">
-                        </div>
-                        <input type="text" id="adm-pod-title" required placeholder="Título del Episodio de Podcast" class="w-full px-3 py-2 rounded-xl bg-black/60 border border-citizen-border text-xs text-white focus:border-citizen-yellow focus:outline-none">
-                        <input type="text" id="adm-pod-desc" required placeholder="Descripción breve del episodio" class="w-full px-3 py-2 rounded-xl bg-black/60 border border-citizen-border text-xs text-white focus:border-citizen-yellow focus:outline-none">
-                        <div class="flex gap-2">
-                            <input type="url" id="adm-pod-url" required placeholder="URL del archivo MP3 del Podcast (https://...)" class="flex-1 px-3 py-2 rounded-xl bg-black/60 border border-citizen-border text-xs text-white focus:border-citizen-yellow focus:outline-none">
-                            <button type="submit" class="px-4 py-2 rounded-xl bg-citizen-yellow hover:bg-citizen-gold text-black font-extrabold text-xs flex-shrink-0 transition-all">
-                                <i class="fa-solid fa-plus mr-1"></i>Agregar
-                            </button>
-                        </div>
-                    </form>
-                    <div id="adm-podcast-list" class="space-y-2 max-h-56 overflow-y-auto pr-1"></div>
-                </div>
-
-                <!-- 4. ADMINISTRAR PROGRAMACIÓN SEMANAL (6 cols) -->
-                <div class="lg:col-span-6 bg-citizen-card rounded-3xl border border-citizen-border p-4 sm:p-5 space-y-3">
-                    <h3 class="text-sm font-black uppercase tracking-wider text-citizen-yellow flex items-center gap-2">
-                        <i class="fa-regular fa-calendar-days"></i>
-                        5. Administrar Parrilla de Programación
-                    </h3>
-                    <form onsubmit="addAdminSchedule(event)" class="space-y-2.5 bg-black/40 p-3 rounded-2xl border border-white/5">
-                        <div class="grid grid-cols-1 sm:grid-cols-3 gap-2">
-                            <select id="adm-sched-day" class="px-3 py-2 rounded-xl bg-black/60 border border-citizen-border text-xs text-white focus:border-citizen-yellow focus:outline-none">
-                                <option value="weekdays">Lunes a Viernes</option>
-                                <option value="weekend">Fin de Semana</option>
-                            </select>
-                            <input type="text" id="adm-sched-time" required placeholder="09:00 - 12:00" class="px-3 py-2 rounded-xl bg-black/60 border border-citizen-border text-xs text-white focus:border-citizen-yellow focus:outline-none">
-                            <input type="text" id="adm-sched-tag" required placeholder="Categoría (Ej: Magazine)" class="px-3 py-2 rounded-xl bg-black/60 border border-citizen-border text-xs text-white focus:border-citizen-yellow focus:outline-none">
-                        </div>
-                        <div class="grid grid-cols-1 sm:grid-cols-12 gap-2">
-                            <input type="text" id="adm-sched-title" required placeholder="Nombre del Programa" class="sm:col-span-5 px-3 py-2 rounded-xl bg-black/60 border border-citizen-border text-xs text-white focus:border-citizen-yellow focus:outline-none">
-                            <input type="text" id="adm-sched-host" required placeholder="Locutor(es)" class="sm:col-span-4 px-3 py-2 rounded-xl bg-black/60 border border-citizen-border text-xs text-white focus:border-citizen-yellow focus:outline-none">
-                            <button type="submit" class="sm:col-span-3 py-2 px-3 rounded-xl bg-citizen-yellow hover:bg-citizen-gold text-black font-extrabold text-xs transition-all">
-                                <i class="fa-solid fa-plus mr-1"></i>Agregar
-                            </button>
-                        </div>
-                    </form>
-                    <div id="adm-schedule-list" class="space-y-2 max-h-56 overflow-y-auto pr-1"></div>
-                </div>
-
-                <!-- 5. MODERACIÓN DEL MURO DE CABINA (12 cols) -->
-                <div class="lg:col-span-12 bg-citizen-card rounded-3xl border border-citizen-border p-4 sm:p-5 space-y-3">
-                    <div class="flex items-center justify-between">
-                        <h3 class="text-sm font-black uppercase tracking-wider text-citizen-yellow flex items-center gap-2">
-                            <i class="fa-solid fa-comments"></i>
-                            6. Moderación de Mensajes de Cabina en Vivo
-                        </h3>
-                        <span class="text-[11px] text-slate-400">Elimina mensajes inapropiados en un clic</span>
-                    </div>
-                    <div id="adm-cabin-list" class="grid grid-cols-1 md:grid-cols-3 gap-2.5"></div>
-                </div>
-
-            </div>
-        </section>
-
-    </main>
-
-    <!-- MODAL DE INICIO DE SESIÓN DE ADMINISTRADOR -->
-    <div id="admin-login-modal" class="fixed inset-0 z-50 hidden bg-black/80 backdrop-blur-md flex items-center justify-center p-4">
-        <div class="bg-citizen-card border border-citizen-yellow/40 rounded-3xl max-w-sm w-full p-6 shadow-2xl space-y-4 relative animate-fade-in">
-            <button onclick="closeAdminLoginModal()" class="absolute top-4 right-4 w-8 h-8 rounded-full bg-white/5 hover:bg-white/10 text-slate-300 flex items-center justify-center" aria-label="Cerrar">
-                <i class="fa-solid fa-xmark"></i>
-            </button>
-            <div class="flex items-center gap-3">
-                <div class="w-12 h-12 rounded-2xl bg-citizen-yellow text-black flex items-center justify-center font-black text-xl flex-shrink-0 shadow-md">
-                    <i class="fa-solid fa-user-lock"></i>
-                </div>
-                <div>
-                    <span class="text-[10px] font-black uppercase tracking-widest text-citizen-yellow">Acceso Restringido</span>
-                    <h3 class="text-lg font-black text-white">Administrador 593</h3>
-                </div>
-            </div>
-            <p class="text-xs text-slate-300">Ingresa tu usuario y contraseña para administrar la señal, programación y podcasts de Citizen 593.</p>
-            <form onsubmit="submitAdminLogin(event)" class="space-y-3">
-                <div>
-                    <label class="block text-[11px] font-bold uppercase text-slate-300 mb-1">Usuario</label>
-                    <div class="relative">
-                        <i class="fa-solid fa-user absolute left-3.5 top-3 text-slate-400 text-xs"></i>
-                        <input type="text" id="login-username" required placeholder="Usuario administrador" class="w-full pl-9 pr-3.5 py-2.5 rounded-xl bg-black/70 border border-citizen-border focus:border-citizen-yellow focus:outline-none text-sm text-white">
-                    </div>
-                </div>
-                <div>
-                    <label class="block text-[11px] font-bold uppercase text-slate-300 mb-1">Clave / Contraseña</label>
-                    <div class="relative">
-                        <i class="fa-solid fa-key absolute left-3.5 top-3 text-slate-400 text-xs"></i>
-                        <input type="password" id="login-password" required placeholder="••••••••" class="w-full pl-9 pr-3.5 py-2.5 rounded-xl bg-black/70 border border-citizen-border focus:border-citizen-yellow focus:outline-none text-sm text-white">
-                    </div>
-                </div>
-                <p id="login-error-msg" class="hidden text-xs font-bold text-citizen-red bg-citizen-red/15 border border-citizen-red/30 rounded-xl px-3 py-2 text-center">
-                    Usuario o clave incorrectos. Intenta nuevamente.
-                </p>
-                <div class="bg-black/40 border border-white/10 rounded-xl p-2.5 text-[11px] text-slate-300 flex items-center justify-between">
-                    <span>Credenciales por defecto:</span>
-                    <span class="font-mono text-citizen-yellow font-bold">admin / citizen593</span>
-                </div>
-                <button type="submit" class="w-full py-3 rounded-xl bg-citizen-yellow hover:bg-citizen-gold text-black font-black text-xs sm:text-sm uppercase tracking-wider shadow-lg shadow-citizen-yellow/20 transition-all">
-                    <i class="fa-solid fa-unlock-keyhole mr-1.5"></i>Ingresar al Panel
-                </button>
-            </form>
-        </div>
+<body>
+<div class="contenedor">
+  <div class="cabecera">
+    <img src="logo.png" alt="Citizen 593 Radio y Podcast" class="logo">
+    <div>
+      <h1>Citizen 593</h1>
+      <div class="sub">Radio - Podcast</div>
     </div>
+  </div>
 
-    <!-- TOAST NOTIFICATION -->
-    <div id="toast-notification" class="fixed top-16 right-4 z-50 hidden transform transition-all duration-300 bg-citizen-card border-l-4 border-citizen-yellow text-white px-4 py-2.5 rounded-xl shadow-2xl flex items-center gap-2.5 max-w-sm">
-        <i class="fa-solid fa-circle-check text-citizen-yellow"></i>
-        <span id="toast-message" class="text-xs sm:text-sm font-semibold">Notificación</span>
+  <div class="disposicion">
+  <div class="columna-radio" id="columnaRadio"></div>
+  <div class="columna-secciones">
+
+  <div class="pestanas">
+    <button type="button" class="activa" data-panel="pBienvenida">Inicio</button>
+    <button type="button" data-panel="pPodcasts">Podcasts</button>
+    <button type="button" data-panel="pMalla">Programación</button>
+    <button type="button" data-panel="pCabina">Cabina</button>
+  </div>
+
+  <div class="panel activo" id="pBienvenida">
+    <div class="seccion">
+      <h2>Bienvenido a Citizen 593</h2>
+      <p style="text-align:center;color:#ccc;margin:0">Escucha la radio en vivo desde el reproductor, pide tu canción en la Cabina y descubre nuestros podcasts y la programación.</p>
     </div>
+  </div>
 
-    <!-- FIXED BOTTOM LUNA MINI-PLAYER BAR WITH INTEGRATED MARQUEE -->
-    <div class="fixed bottom-14 md:bottom-0 inset-x-0 z-40 bg-[#0d190e]/95 backdrop-blur-xl border-t border-citizen-yellow/30 px-3 sm:px-6 py-2 shadow-2xl">
-        <div class="max-w-7xl mx-auto flex items-center justify-between gap-2.5 sm:gap-4">
-            <!-- Mini Turntable & Live Status -->
-            <div class="flex items-center gap-2.5 flex-shrink-0 cursor-pointer" onclick="switchTab('live')">
-                <div id="mini-luna-disc" class="vinyl-spin w-9 h-9 sm:w-10 sm:h-10 rounded-full overflow-hidden border-2 border-citizen-yellow flex-shrink-0 bg-black flex items-center justify-center logo-slot">
-                    <img src="593-LOGO2.png" alt="Logo Mini" class="w-full h-full object-cover flex-shrink-0" onerror="replaceWithSvgLogo(this)">
-                </div>
-                <div class="hidden sm:flex flex-col">
-                    <div class="flex items-center gap-1.5">
-                        <span class="px-1.5 py-0.5 rounded text-[9px] font-black uppercase bg-citizen-red text-white flex-shrink-0">EN VIVO</span>
-                        <span id="mini-player-title" class="text-xs font-extrabold text-white whitespace-nowrap">Señal Oficial 24/7</span>
-                    </div>
-                    <span id="mini-player-subtitle" class="text-[10px] text-citizen-yellow whitespace-nowrap">Luna Universe Player</span>
-                </div>
-            </div>
-
-            <!-- Integrated Scrolling Marquee in Bottom Bar -->
-            <div class="flex-1 min-w-0 bg-black/55 rounded-xl py-1.5 px-3 border border-white/10 flex items-center gap-2 overflow-hidden">
-                <span class="sm:hidden px-1.5 py-0.5 rounded text-[8px] font-black uppercase bg-citizen-red text-white flex-shrink-0">VIVO</span>
-                <div class="marquee-wrapper w-full">
-                    <div id="marquee-track" class="marquee-content text-xs sm:text-sm font-extrabold text-citizen-yellow tracking-wide">
-                        🎵 La Voz Ciudadana del Ecuador para el Mundo • ¡Sintoniza nuestra señal en vivo 24/7!
-                    </div>
-                </div>
-            </div>
-
-            <!-- Mini Controls (Mute + Play/Pause) -->
-            <div class="flex items-center gap-2 flex-shrink-0">
-                <button onclick="toggleMute()" class="hidden xs:flex w-8 h-8 sm:w-9 sm:h-9 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 text-slate-300 hover:text-citizen-yellow items-center justify-center transition-all" aria-label="Silenciar">
-                    <i id="mini-volume-icon" class="fa-solid fa-volume-high text-xs"></i>
-                </button>
-                <button onclick="togglePlay()" class="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-citizen-yellow hover:bg-citizen-gold text-black flex items-center justify-center font-black shadow-md transition-all flex-shrink-0" aria-label="Reproducir o Pausar">
-                    <i id="mini-play-icon" class="fa-solid fa-play text-xs sm:text-sm ml-0.5"></i>
-                </button>
-            </div>
-        </div>
+  <div id="origenRadio">
+  <div class="reproductor">
+    <div class="en-vivo">EN VIVO</div>
+    <div class="disco" id="disco"></div>
+    <div class="ecualizador" id="ecualizador"><span></span><span></span><span></span><span></span><span></span><span></span><span></span></div>
+    <div class="estado" id="estado">Toca para escuchar en vivo</div>
+    <button id="btnPlay" aria-label="Reproducir o pausar">&#9658;</button>
+    <div class="volumen">
+      <span>&#128266;</span>
+      <input type="range" id="vol" min="0" max="1" step="0.05" value="0.8" orient="vertical" aria-label="Volumen">
     </div>
-
-    <!-- MOBILE BOTTOM NAVIGATION BAR (PWA App Style) -->
-    <nav class="md:hidden fixed bottom-0 inset-x-0 z-40 bg-[#0a140b]/98 backdrop-blur-xl border-t border-white/10 px-2 py-1.5">
-        <div class="grid grid-cols-4 gap-1 max-w-md mx-auto">
-            <button onclick="switchTab('live')" id="nav-mob-live" class="flex flex-col items-center justify-center py-2 rounded-xl text-citizen-yellow font-bold transition-all">
-                <i class="fa-solid fa-compact-disc text-lg mb-0.5"></i>
-                <span class="text-[10px]">En Vivo</span>
-            </button>
-            <button onclick="switchTab('podcasts')" id="nav-mob-podcasts" class="flex flex-col items-center justify-center py-2 rounded-xl text-slate-400 font-medium transition-all">
-                <i class="fa-solid fa-microphone-lines text-lg mb-0.5"></i>
-                <span class="text-[10px]">Podcasts</span>
-            </button>
-            <button onclick="switchTab('schedule')" id="nav-mob-schedule" class="flex flex-col items-center justify-center py-2 rounded-xl text-slate-400 font-medium transition-all">
-                <i class="fa-regular fa-calendar-days text-lg mb-0.5"></i>
-                <span class="text-[10px]">Programas</span>
-            </button>
-            <button onclick="switchTab('contact')" id="nav-mob-contact" class="flex flex-col items-center justify-center py-2 rounded-xl text-slate-400 font-medium transition-all">
-                <i class="fa-brands fa-whatsapp text-lg mb-0.5"></i>
-                <span class="text-[10px]">Cabina</span>
-            </button>
-        </div>
-    </nav>
-
-    <!-- HIDDEN HTML5 AUDIO ELEMENT -->
-    <audio id="radio-audio" preload="none"></audio>
-
-    <script>
-        /* =========================================================================
-           1. LOGO FALLBACK HANDLER (Ensures 593-LOGO2.png or identical SVG shows)
-           ========================================================================= */
-        function replaceWithSvgLogo(imgElement) {
-            const template = document.getElementById('citizen-svg-logo-template');
-            if (template && imgElement && imgElement.parentNode) {
-                const clone = template.content.cloneNode(true);
-                const parent = imgElement.parentNode;
-                parent.innerHTML = '';
-                parent.appendChild(clone);
-            }
-        }
-
-        /* =========================================================================
-           2. APPLICATION STATE & OFFICIAL ZENO.FM STREAM
-           ========================================================================= */
-        const ADMIN_CREDENTIALS = {
-            username: "admin",
-            password: "citizen593"
-        };
-        let isAdminAuthenticated = false;
-        let WHATSAPP_NUMBER = "593999999999";
-
-        const OFFICIAL_STREAM = {
-            name: "Señal Oficial en Vivo",
-            slogan: "",
-            marquee: "🎵 La Voz Ciudadana del Ecuador para el Mundo • ¡Sintoniza nuestra señal oficial en vivo 24/7!",
-            url: "https://stream.zeno.fm/eny8ge4ctg8uv",
-            bitrate: "HD Stream • Zeno.fm"
-        };
-
-        const TRACK_HISTORY = [
-            { title: "Señal Oficial en Directo • 593", artist: "Transmisión en Vivo 24/7", time: "Al Aire" },
-            { title: "Debatiendo el Futuro Digital en Ecuador", artist: "Episodio Especial • Editorial", time: "Hace 8 min" },
-            { title: "Afuera Está Lloviendo", artist: "Guardarraya • Rock Ecuatoriano", time: "Hace 14 min" },
-            { title: "Conexión Latina & Éxitos 593", artist: "DJ Cabina 593", time: "Hace 21 min" },
-            { title: "Nuestro Juramento (Versión Acústica)", artist: "Especial Tricolor 593", time: "Hace 28 min" }
-        ];
-
-        const PODCAST_EPISODES = [
-            {
-                id: 101,
-                ep: "EP. 42",
-                title: "Voces del 593: Emprendimiento y Tecnología desde Ecuador",
-                desc: "Conversamos con creadores digitales y emprendedores ecuatorianos que están rompiendo fronteras en Latinoamérica.",
-                duration: "38 min",
-                date: "Esta semana",
-                audioUrl: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3"
-            },
-            {
-                id: 102,
-                ep: "EP. 41",
-                title: "Historia y Evolución del Rock & Pop Hecho en Ecuador",
-                desc: "Un recorrido sonoro por las bandas míticas de Quito, Guayaquil y Cuenca que marcaron generaciones.",
-                duration: "45 min",
-                date: "Hace 5 días",
-                audioUrl: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-2.mp3"
-            },
-            {
-                id: 103,
-                ep: "EP. 40",
-                title: "Ciudadanía Activa: Movilidad, Cultura y Comunidad",
-                desc: "Análisis directo sin filtros sobre los retos urbanos de nuestras ciudades y propuestas ciudadanas.",
-                duration: "52 min",
-                date: "Hace 1 semana",
-                audioUrl: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-3.mp3"
-            },
-            {
-                id: 104,
-                ep: "EP. 39",
-                title: "Ecuatorianos por el Mundo: Historias de la Diáspora 593",
-                desc: "Conectamos en directo con compatriotas en España, Estados Unidos e Italia que mantienen viva nuestra cultura.",
-                duration: "41 min",
-                date: "Hace 2 semanas",
-                audioUrl: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-4.mp3"
-            }
-        ];
-
-        const SCHEDULE_DATA = {
-            weekdays: [
-                { time: "06:00 - 09:00", title: "Despierta 593 (Noticiero & Café)", host: "Equipo Periodístico Citizen", tag: "Informativo" },
-                { time: "09:00 - 12:00", title: "Mañanas Ciudadanas & Música", host: "Valeria & Andrés", tag: "Magazine" },
-                { time: "12:00 - 14:00", title: "El Debate 593 Podcast (En Vivo)", host: "Mesa de Análisis", tag: "Podcast Live" },
-                { time: "14:00 - 18:00", title: "Conexión Musical 593", host: "DJ Sebastián", tag: "Éxitos & Pedidos" },
-                { time: "18:00 - 20:00", title: "Regreso a Casa • Tráfico y Humor", host: "La Cabina 593", tag: "Entretenimiento" },
-                { time: "20:00 - 23:00", title: "Noches de Podcast & Especiales", host: "Invitados Especiales", tag: "Cultura" }
-            ],
-            weekend: [
-                { time: "08:00 - 11:00", title: "Raíces del Ecuador (Música Nacional)", host: "Don Ernesto", tag: "Tradición 593" },
-                { time: "11:00 - 15:00", title: "Top 40 Citizen Countdown", host: "Camila Torres", tag: "Ranking Semanal" },
-                { time: "15:00 - 19:00", title: "Tarde Deportiva Tricolor 593", host: "Panel Deportivo", tag: "Deportes" },
-                { time: "19:00 - 01:00", title: "Fiesta 593 Mix • Sesión Ininterrumpida", host: "DJs Residentes", tag: "Mezclas en Vivo" }
-            ]
-        };
-
-        const CABIN_MESSAGES = [
-            { name: "Gabriela M.", city: "Quito, EC", type: "Saludo en Vivo", text: "¡Excelente señal Citizen 593! Escuchándolos desde el trabajo en La Carolina." },
-            { name: "Diego R.", city: "Madrid, ES", type: "Pedido Musical", text: "Un abrazo a toda la gente linda de Ecuador desde Madrid. Pongan algo de Verde 70 por favor." },
-            { name: "Fernanda L.", city: "Guayaquil, EC", type: "Podcast", text: "Me encantó el último episodio del podcast sobre emprendimiento digital. ¡Sigan así!" }
-        ];
-
-        // Player runtime state
-        let isPlaying = false;
-        let isMuted = false;
-        let currentStreamUrl = OFFICIAL_STREAM.url;
-        let currentMode = 'live'; // 'live' or 'podcast'
-        let sleepTimerId = null;
-        let sleepMinutesLeft = 0;
-
-        const audioEl = document.getElementById('radio-audio');
-        audioEl.src = currentStreamUrl;
-        audioEl.volume = 0.85;
-
-        /* =========================================================================
-           3. AUDIO CONTROLS & LUNA PLAYER LOGIC
-           ========================================================================= */
-        function togglePlay() {
-            if (audioEl.paused) {
-                playAudio();
-            } else {
-                pauseAudio();
-            }
-        }
-
-        function playAudio() {
-            // If returning from paused live stream, ensure fresh connection to live buffer
-            if (currentMode === 'live' && (!audioEl.src || !audioEl.src.includes('zeno.fm'))) {
-                audioEl.src = OFFICIAL_STREAM.url;
-            }
-            const playPromise = audioEl.play();
-            if (playPromise !== undefined) {
-                playPromise.then(() => {
-                    isPlaying = true;
-                    updatePlayerUI(true);
-                }).catch((err) => {
-                    console.warn("Reproducción de stream en proceso:", err);
-                    showToast("Conectando con la señal en vivo de Citizen 593...");
-                    isPlaying = true;
-                    updatePlayerUI(true);
-                });
-            }
-        }
-
-        function pauseAudio() {
-            audioEl.pause();
-            isPlaying = false;
-            updatePlayerUI(false);
-        }
-
-        function updatePlayerUI(playing) {
-            const centerIcon = document.getElementById('center-play-icon');
-            const mainIcon = document.getElementById('main-play-icon');
-            const miniIcon = document.getElementById('mini-play-icon');
-            const vinyl = document.getElementById('luna-vinyl');
-            const miniDisc = document.getElementById('mini-luna-disc');
-            const ring = document.getElementById('luna-disc-ring');
-
-            if (playing) {
-                centerIcon.className = "fa-solid fa-pause text-xl sm:text-2xl group-hover:scale-110 transition-transform";
-                mainIcon.className = "fa-solid fa-pause text-2xl";
-                if (miniIcon) miniIcon.className = "fa-solid fa-pause text-sm";
-                vinyl.classList.add('playing');
-                if (miniDisc) miniDisc.classList.add('playing');
-                ring.classList.add('playing');
-            } else {
-                centerIcon.className = "fa-solid fa-play text-xl sm:text-2xl ml-1 group-hover:scale-110 transition-transform";
-                mainIcon.className = "fa-solid fa-play text-2xl ml-0.5";
-                if (miniIcon) miniIcon.className = "fa-solid fa-play text-sm ml-0.5";
-                vinyl.classList.remove('playing');
-                if (miniDisc) miniDisc.classList.remove('playing');
-                ring.classList.remove('playing');
-            }
-        }
-
-        function changeVolume(val) {
-            const numericVal = parseInt(val, 10);
-            audioEl.volume = numericVal / 100;
-            isMuted = numericVal === 0;
-            document.getElementById('volume-value').textContent = `${numericVal}%`;
-            updateVolumeIcon(numericVal);
-        }
-
-        function toggleMute() {
-            const slider = document.getElementById('volume-slider');
-            if (isMuted) {
-                audioEl.muted = false;
-                isMuted = false;
-                const restored = slider.value > 0 ? slider.value : 80;
-                slider.value = restored;
-                audioEl.volume = restored / 100;
-                document.getElementById('volume-value').textContent = `${restored}%`;
-                updateVolumeIcon(restored);
-            } else {
-                audioEl.muted = true;
-                isMuted = true;
-                document.getElementById('volume-value').textContent = `0%`;
-                updateVolumeIcon(0);
-            }
-        }
-
-        function updateVolumeIcon(val) {
-            const icon = document.getElementById('volume-icon');
-            const miniVolIcon = document.getElementById('mini-volume-icon');
-            if (val == 0 || isMuted) {
-                icon.className = "fa-solid fa-volume-xmark text-citizen-red";
-                if (miniVolIcon) miniVolIcon.className = "fa-solid fa-volume-xmark text-xs text-citizen-red";
-            } else if (val < 50) {
-                icon.className = "fa-solid fa-volume-low";
-                if (miniVolIcon) miniVolIcon.className = "fa-solid fa-volume-low text-xs";
-            } else {
-                icon.className = "fa-solid fa-volume-high";
-                if (miniVolIcon) miniVolIcon.className = "fa-solid fa-volume-high text-xs";
-            }
-        }
-
-        function returnToLiveStream() {
-            currentMode = 'live';
-            currentStreamUrl = OFFICIAL_STREAM.url;
-            audioEl.src = currentStreamUrl;
-
-            const showBadge = document.getElementById('current-show-badge');
-            if (showBadge) {
-                showBadge.classList.add('hidden');
-                showBadge.classList.remove('inline-flex');
-            }
-            document.getElementById('current-show-title').textContent = "";
-            document.getElementById('marquee-track').textContent = OFFICIAL_STREAM.marquee;
-            document.getElementById('stream-quality-badge').textContent = OFFICIAL_STREAM.bitrate;
-            document.getElementById('player-mode-label').textContent = "EN VIVO • LUNA PLAYER";
-            document.getElementById('mini-player-title').textContent = "Señal Oficial 24/7";
-            document.getElementById('mini-player-subtitle').textContent = "Señal en Vivo • Luna Universe Player";
-
-            playAudio();
-            showToast("Conectado a la Señal en Vivo");
-        }
-
-        function playPodcastEpisode(episodeId) {
-            const ep = PODCAST_EPISODES.find(item => item.id === episodeId);
-            if (!ep) return;
-
-            currentMode = 'podcast';
-            audioEl.src = ep.audioUrl;
-            document.getElementById('player-mode-label').textContent = `PODCAST • ${ep.ep}`;
-            const showBadge = document.getElementById('current-show-badge');
-            if (showBadge) {
-                showBadge.classList.remove('hidden');
-                showBadge.classList.add('inline-flex');
-            }
-            document.getElementById('current-show-title').textContent = `Podcast On-Demand (${ep.duration})`;
-            document.getElementById('marquee-track').textContent = `🎙️ REPRODUCIENDO PODCAST: ${ep.title} — ${ep.desc}`;
-            document.getElementById('mini-player-title').textContent = `${ep.ep}: ${ep.title}`;
-            document.getElementById('mini-player-subtitle').textContent = `Episodio On-Demand • Reproductor Luna`;
-
-            switchTab('live');
-            playAudio();
-            showToast(`Reproduciendo ${ep.ep}: ${ep.title}`);
-        }
-
-        function likeCurrentTrack() {
-            const btn = document.getElementById('like-track-btn');
-            btn.classList.toggle('text-citizen-red');
-            btn.classList.toggle('border-citizen-red');
-            showToast("¡Gracias! Tu voto se sumó al Ranking 593 ❤️");
-        }
-
-        function toggleSleepTimer() {
-            const label = document.getElementById('sleep-timer-label');
-            if (sleepTimerId) {
-                clearTimeout(sleepTimerId);
-                sleepTimerId = null;
-                sleepMinutesLeft = 0;
-                label.textContent = "Timer";
-                showToast("Temporizador de apagado desactivado");
-            } else {
-                sleepMinutesLeft = 30;
-                label.textContent = "30m";
-                showToast("Apagado automático programado en 30 minutos");
-                sleepTimerId = setTimeout(() => {
-                    pauseAudio();
-                    sleepTimerId = null;
-                    label.textContent = "Timer";
-                    showToast("Reproductor pausado por temporizador");
-                }, 30 * 60 * 1000);
-            }
-        }
-
-        /* =========================================================================
-           4. LUNA PLAYER REAL-TIME CANVAS AUDIO SPECTRUM (RADIAL + BOTTOM BAR)
-           ========================================================================= */
-        const radialCanvas = document.getElementById('luna-radial-canvas');
-        const radialCtx = radialCanvas.getContext('2d');
-        const barCanvas = document.getElementById('luna-bar-canvas');
-        const barCtx = barCanvas.getContext('2d');
-
-        let phase = 0;
-        const numBarsRadial = 64;
-        const numBarsBottom = 48;
-
-        function animateLunaSpectrum() {
-            requestAnimationFrame(animateLunaSpectrum);
-            phase += isPlaying ? 0.08 : 0.015;
-
-            // 1. Draw Radial Circular Spectrum around Logo
-            const rw = radialCanvas.width;
-            const rh = radialCanvas.height;
-            const cx = rw / 2;
-            const cy = rh / 2;
-            const baseRadius = 116;
-
-            radialCtx.clearRect(0, 0, rw, rh);
-
-            for (let i = 0; i < numBarsRadial; i++) {
-                const angle = (i / numBarsRadial) * Math.PI * 2;
-                // Smooth organic frequency simulation so it works regardless of CORS stream headers
-                const wave1 = Math.sin(i * 0.4 + phase * 1.7) * 0.5 + 0.5;
-                const wave2 = Math.cos(i * 0.25 - phase * 1.1) * 0.5 + 0.5;
-                const activeBoost = isPlaying ? (Math.sin(phase * 3 + i) * 14 + 28 * wave1 * wave2) : 4;
-                const barHeight = 5 + activeBoost;
-
-                const x1 = cx + Math.cos(angle) * baseRadius;
-                const y1 = cy + Math.sin(angle) * baseRadius;
-                const x2 = cx + Math.cos(angle) * (baseRadius + barHeight);
-                const y2 = cy + Math.sin(angle) * (baseRadius + barHeight);
-
-                radialCtx.beginPath();
-                radialCtx.moveTo(x1, y1);
-                radialCtx.lineTo(x2, y2);
-                radialCtx.lineWidth = 3.2;
-                radialCtx.lineCap = 'round';
-
-                // Alternate Citizen 593 palette colors (Yellow, Blue, Red accent)
-                if (i % 8 === 0) {
-                    radialCtx.strokeStyle = '#E60000';
-                } else if (i % 3 === 0) {
-                    radialCtx.strokeStyle = '#0077FF';
-                } else {
-                    radialCtx.strokeStyle = '#FFEA00';
-                }
-                radialCtx.stroke();
-            }
-
-            // 2. Draw Horizontal Equalizer Bars at bottom of Luna Player
-            const bw = barCanvas.width;
-            const bh = barCanvas.height;
-            barCtx.clearRect(0, 0, bw, bh);
-
-            const spacing = bw / numBarsBottom;
-            for (let j = 0; j < numBarsBottom; j++) {
-                const centerFactor = 1 - Math.abs((j - numBarsBottom / 2) / (numBarsBottom / 2));
-                const nWave = Math.sin(j * 0.5 + phase * 2.2) * 0.5 + 0.5;
-                const h = isPlaying
-                    ? Math.max(4, (nWave * 34 * centerFactor) + (Math.random() * 6))
-                    : 4;
-
-                const x = j * spacing + 3;
-                const y = (bh - h) / 2;
-
-                const grad = barCtx.createLinearGradient(0, y, 0, y + h);
-                grad.addColorStop(0, '#FFEA00');
-                grad.addColorStop(0.6, '#0055A4');
-                grad.addColorStop(1, '#E60000');
-
-                barCtx.fillStyle = grad;
-                barCtx.beginPath();
-                barCtx.roundRect(x, y, spacing - 5, h, 3);
-                barCtx.fill();
-            }
-        }
-
-        /* =========================================================================
-           5. RENDER LISTS (HISTORY, PODCASTS, SCHEDULE, CABIN WALL)
-           ========================================================================= */
-        function renderTrackHistory() {
-            const container = document.getElementById('track-history-list');
-            container.innerHTML = TRACK_HISTORY.map((item, idx) => `
-                <div class="flex items-center justify-between gap-3 p-3 rounded-2xl ${idx === 0 ? 'bg-citizen-yellow/10 border border-citizen-yellow/30' : 'bg-black/40 border border-white/5'}">
-                    <div class="flex items-center gap-3 min-w-0">
-                        <div class="w-9 h-9 rounded-xl ${idx === 0 ? 'bg-citizen-yellow text-black' : 'bg-white/5 text-citizen-yellow'} flex items-center justify-center flex-shrink-0 font-bold text-xs">
-                            ${idx === 0 ? '<i class="fa-solid fa-wave-square animate-pulse"></i>' : `<i class="fa-solid fa-music"></i>`}
-                        </div>
-                        <div class="min-w-0">
-                            <p class="text-xs sm:text-sm font-bold text-white truncate">${item.title}</p>
-                            <p class="text-[11px] text-slate-400 truncate">${item.artist}</p>
-                        </div>
-                    </div>
-                    <span class="text-[10px] font-bold px-2 py-1 rounded-lg ${idx === 0 ? 'bg-citizen-red text-white' : 'bg-white/5 text-slate-400'} flex-shrink-0">
-                        ${item.time}
-                    </span>
-                </div>
-            `).join('');
-        }
-
-        function renderPodcasts() {
-            const container = document.getElementById('podcast-grid');
-            container.innerHTML = PODCAST_EPISODES.map(ep => `
-                <div class="bg-citizen-card rounded-3xl border border-citizen-border p-5 flex flex-col justify-between gap-4 hover:border-citizen-yellow/50 transition-all group">
-                    <div class="flex items-start gap-4">
-                        <div class="w-16 h-16 rounded-2xl bg-black p-1 border border-citizen-border flex-shrink-0 overflow-hidden flex items-center justify-center logo-slot">
-                            <img src="593-LOGO2.png" alt="Podcast Cover" class="w-full h-full object-cover flex-shrink-0" onerror="replaceWithSvgLogo(this)">
-                        </div>
-                        <div class="space-y-1">
-                            <div class="flex items-center gap-2">
-                                <span class="text-[10px] font-black px-2 py-0.5 rounded-md bg-citizen-yellow text-black">${ep.ep}</span>
-                                <span class="text-xs text-slate-400 font-medium">${ep.date} • ${ep.duration}</span>
-                            </div>
-                            <h3 class="text-base font-extrabold text-white group-hover:text-citizen-yellow transition-colors">${ep.title}</h3>
-                            <p class="text-xs text-slate-400 leading-relaxed">${ep.desc}</p>
-                        </div>
-                    </div>
-                    <div class="flex items-center justify-between pt-3 border-t border-citizen-border">
-                        <span class="text-[11px] font-semibold text-slate-400">
-                            <i class="fa-solid fa-headphones text-citizen-blue mr-1"></i>Audio Original HD
-                        </span>
-                        <button onclick="playPodcastEpisode(${ep.id})" class="px-4 py-2 rounded-xl bg-citizen-yellow hover:bg-citizen-gold text-black font-extrabold text-xs flex items-center gap-2 transition-all">
-                            <i class="fa-solid fa-play"></i>
-                            <span>Escuchar en Luna</span>
-                        </button>
-                    </div>
-                </div>
-            `).join('');
-        }
-
-        function filterSchedule(dayGroup) {
-            const btnWeek = document.getElementById('sched-weekdays');
-            const btnEnd = document.getElementById('sched-weekend');
-
-            if (dayGroup === 'weekdays') {
-                btnWeek.className = "px-3.5 py-2 rounded-xl text-xs font-bold bg-citizen-yellow text-black transition-all";
-                btnEnd.className = "px-3.5 py-2 rounded-xl text-xs font-bold text-slate-300 hover:text-white transition-all";
-            } else {
-                btnEnd.className = "px-3.5 py-2 rounded-xl text-xs font-bold bg-citizen-yellow text-black transition-all";
-                btnWeek.className = "px-3.5 py-2 rounded-xl text-xs font-bold text-slate-300 hover:text-white transition-all";
-            }
-
-            const list = SCHEDULE_DATA[dayGroup] || [];
-            const container = document.getElementById('schedule-list');
-            container.innerHTML = list.map((item, index) => `
-                <div class="bg-citizen-card rounded-2xl border border-citizen-border p-4 flex items-center justify-between gap-4 hover:border-citizen-blue transition-all">
-                    <div class="flex items-center gap-3.5">
-                        <div class="px-3 py-2 rounded-xl bg-black/70 border border-citizen-border text-center flex-shrink-0">
-                            <span class="block text-xs font-black text-citizen-yellow">${item.time.split(' - ')[0]}</span>
-                            <span class="block text-[10px] text-slate-400">${item.time.split(' - ')[1]}</span>
-                        </div>
-                        <div>
-                            <span class="inline-block text-[10px] font-bold uppercase tracking-wider text-citizen-yellow mb-0.5">${item.tag}</span>
-                            <h4 class="text-sm sm:text-base font-extrabold text-white">${item.title}</h4>
-                            <p class="text-xs text-slate-400"><i class="fa-solid fa-user-astronaut mr-1 text-citizen-blue"></i>${item.host}</p>
-                        </div>
-                    </div>
-                    ${index === 1 ? '<span class="px-2.5 py-1 rounded-full text-[10px] font-extrabold bg-citizen-red/20 text-citizen-red border border-citizen-red/30 flex-shrink-0">AL AIRE</span>' : ''}
-                </div>
-            `).join('');
-        }
-
-        function renderCabinWall() {
-            const container = document.getElementById('cabin-wall-list');
-            container.innerHTML = CABIN_MESSAGES.map(m => `
-                <div class="p-3.5 rounded-2xl bg-black/50 border border-white/5 space-y-1">
-                    <div class="flex items-center justify-between">
-                        <span class="text-xs font-extrabold text-citizen-yellow">${m.name} <span class="text-slate-400 font-normal">• ${m.city}</span></span>
-                        <span class="text-[10px] px-2 py-0.5 rounded-md bg-citizen-blue/30 text-blue-300 font-semibold">${m.type}</span>
-                    </div>
-                    <p class="text-xs text-slate-200">${m.text}</p>
-                </div>
-            `).join('');
-        }
-
-        function sendCabinMessage(e) {
-            e.preventDefault();
-            const name = document.getElementById('msg-name').value.trim();
-            const city = document.getElementById('msg-city').value.trim();
-            const type = document.getElementById('msg-type').value;
-            const text = document.getElementById('msg-content').value.trim();
-
-            if (!name || !text) return;
-
-            CABIN_MESSAGES.unshift({ name, city, type, text });
-            renderCabinWall();
-            if (isAdminAuthenticated) renderAdminDashboard();
-            e.target.reset();
-            showToast("¡Tu mensaje fue publicado en el muro de Cabina 593!");
-        }
-
-        function openWhatsAppDirect() {
-            const name = document.getElementById('msg-name').value.trim() || 'Oyente 593';
-            const text = document.getElementById('msg-content').value.trim() || '¡Hola Cabina 593! Los estoy escuchando en vivo.';
-            const encoded = encodeURIComponent(`Hola *Cabina 593* 🇪🇨🎧, soy ${name}: ${text}`);
-            window.open(`https://wa.me/${WHATSAPP_NUMBER}?text=${encoded}`, '_blank');
-        }
-
-        /* =========================================================================
-           5B. ADMIN AUTHENTICATION & CMS MANAGEMENT FUNCTIONS
-           ========================================================================= */
-        function handleAdminAccess() {
-            if (isAdminAuthenticated) {
-                switchTab('admin');
-                renderAdminDashboard();
-            } else {
-                document.getElementById('login-error-msg').classList.add('hidden');
-                document.getElementById('admin-login-modal').classList.remove('hidden');
-                setTimeout(() => document.getElementById('login-username').focus(), 100);
-            }
-        }
-
-        function closeAdminLoginModal() {
-            document.getElementById('admin-login-modal').classList.add('hidden');
-        }
-
-        function submitAdminLogin(e) {
-            e.preventDefault();
-            const user = document.getElementById('login-username').value.trim();
-            const pass = document.getElementById('login-password').value;
-
-            if (user === ADMIN_CREDENTIALS.username && pass === ADMIN_CREDENTIALS.password) {
-                isAdminAuthenticated = true;
-                closeAdminLoginModal();
-                document.getElementById('header-admin-icon').className = "fa-solid fa-sliders text-xs text-citizen-yellow";
-                document.getElementById('header-admin-btn').classList.add('border-citizen-yellow', 'bg-citizen-yellow/15');
-                renderAdminDashboard();
-                switchTab('admin');
-                showToast("Bienvenido al Panel de Administración de Citizen 593");
-            } else {
-                document.getElementById('login-error-msg').classList.remove('hidden');
-            }
-        }
-
-        function logoutAdmin() {
-            isAdminAuthenticated = false;
-            document.getElementById('header-admin-icon').className = "fa-solid fa-lock text-xs";
-            document.getElementById('header-admin-btn').classList.remove('border-citizen-yellow', 'bg-citizen-yellow/15');
-            document.getElementById('login-password').value = '';
-            switchTab('live');
-            showToast("Sesión de administrador cerrada correctamente");
-        }
-
-        function renderAdminDashboard() {
-            if (!isAdminAuthenticated) return;
-
-            // Populate General Config
-            document.getElementById('adm-stream-url').value = OFFICIAL_STREAM.url;
-            document.getElementById('adm-stream-name').value = OFFICIAL_STREAM.name;
-            document.getElementById('adm-stream-bitrate').value = OFFICIAL_STREAM.bitrate;
-            document.getElementById('adm-marquee').value = OFFICIAL_STREAM.marquee;
-            document.getElementById('adm-whatsapp').value = WHATSAPP_NUMBER;
-            document.getElementById('adm-cred-user').value = ADMIN_CREDENTIALS.username;
-
-            // Populate History List
-            const histContainer = document.getElementById('adm-history-list');
-            histContainer.innerHTML = TRACK_HISTORY.map((t, idx) => `
-                <div class="flex items-center justify-between gap-2 px-3 py-1.5 rounded-xl bg-black/50 border border-white/5 text-xs">
-                    <div class="truncate">
-                        <span class="font-bold text-citizen-yellow">${idx === 0 ? '[AL AIRE] ' : ''}</span>
-                        <span class="font-semibold text-white">${t.title}</span>
-                        <span class="text-slate-400"> • ${t.artist}</span>
-                    </div>
-                    <button onclick="deleteAdminHistory(${idx})" class="text-slate-400 hover:text-citizen-red px-1.5 py-0.5 flex-shrink-0" title="Eliminar">
-                        <i class="fa-solid fa-trash-can"></i>
-                    </button>
-                </div>
-            `).join('');
-
-            // Populate Podcasts List
-            const podContainer = document.getElementById('adm-podcast-list');
-            podContainer.innerHTML = PODCAST_EPISODES.map((ep, idx) => `
-                <div class="flex items-center justify-between gap-2 p-2.5 rounded-xl bg-black/50 border border-white/5 text-xs">
-                    <div class="min-w-0">
-                        <span class="px-1.5 py-0.5 rounded bg-citizen-yellow text-black font-black text-[10px] mr-1.5">${ep.ep}</span>
-                        <span class="font-bold text-white truncate">${ep.title}</span>
-                        <p class="text-[10px] text-slate-400 truncate mt-0.5">${ep.duration} • ${ep.date}</p>
-                    </div>
-                    <button onclick="deleteAdminPodcast(${idx})" class="w-7 h-7 rounded-lg bg-citizen-red/20 hover:bg-citizen-red text-citizen-red hover:text-white flex items-center justify-center flex-shrink-0 transition-all" title="Eliminar Podcast">
-                        <i class="fa-solid fa-trash-can text-xs"></i>
-                    </button>
-                </div>
-            `).join('');
-
-            // Populate Schedule List
-            const schedContainer = document.getElementById('adm-schedule-list');
-            const weekdaysHtml = SCHEDULE_DATA.weekdays.map((s, idx) => `
-                <div class="flex items-center justify-between gap-2 p-2 rounded-xl bg-black/50 border border-white/5 text-xs">
-                    <div class="truncate">
-                        <span class="text-[10px] font-black text-citizen-yellow uppercase">[L-V ${s.time}]</span>
-                        <span class="font-bold text-white ml-1">${s.title}</span>
-                        <span class="text-slate-400"> (${s.host})</span>
-                    </div>
-                    <button onclick="deleteAdminSchedule('weekdays', ${idx})" class="text-slate-400 hover:text-citizen-red px-1.5" title="Eliminar">
-                        <i class="fa-solid fa-trash-can"></i>
-                    </button>
-                </div>
-            `).join('');
-            const weekendHtml = SCHEDULE_DATA.weekend.map((s, idx) => `
-                <div class="flex items-center justify-between gap-2 p-2 rounded-xl bg-black/50 border border-white/5 text-xs">
-                    <div class="truncate">
-                        <span class="text-[10px] font-black text-blue-400 uppercase">[FDS ${s.time}]</span>
-                        <span class="font-bold text-white ml-1">${s.title}</span>
-                        <span class="text-slate-400"> (${s.host})</span>
-                    </div>
-                    <button onclick="deleteAdminSchedule('weekend', ${idx})" class="text-slate-400 hover:text-citizen-red px-1.5" title="Eliminar">
-                        <i class="fa-solid fa-trash-can"></i>
-                    </button>
-                </div>
-            `).join('');
-            schedContainer.innerHTML = weekdaysHtml + weekendHtml;
-
-            // Populate Cabin Wall Moderation
-            const cabinContainer = document.getElementById('adm-cabin-list');
-            cabinContainer.innerHTML = CABIN_MESSAGES.map((m, idx) => `
-                <div class="p-3 rounded-2xl bg-black/50 border border-white/10 flex items-start justify-between gap-2">
-                    <div class="min-w-0">
-                        <p class="text-xs font-extrabold text-citizen-yellow truncate">${m.name} <span class="text-slate-400 font-normal">(${m.city})</span></p>
-                        <p class="text-xs text-slate-200 line-clamp-2 mt-0.5">${m.text}</p>
-                    </div>
-                    <button onclick="deleteAdminCabinMessage(${idx})" class="w-7 h-7 rounded-lg bg-citizen-red/20 hover:bg-citizen-red text-citizen-red hover:text-white flex items-center justify-center flex-shrink-0 transition-all" title="Borrar mensaje">
-                        <i class="fa-solid fa-trash-can text-xs"></i>
-                    </button>
-                </div>
-            `).join('');
-        }
-
-        function saveGeneralAdminConfig(e) {
-            e.preventDefault();
-            OFFICIAL_STREAM.url = document.getElementById('adm-stream-url').value.trim();
-            OFFICIAL_STREAM.name = document.getElementById('adm-stream-name').value.trim();
-            OFFICIAL_STREAM.bitrate = document.getElementById('adm-stream-bitrate').value.trim();
-            OFFICIAL_STREAM.marquee = document.getElementById('adm-marquee').value.trim();
-            WHATSAPP_NUMBER = document.getElementById('adm-whatsapp').value.trim().replace(/[^0-9]/g, '') || "593999999999";
-
-            document.getElementById('active-stream-label').textContent = OFFICIAL_STREAM.name;
-            document.getElementById('stream-quality-badge').textContent = OFFICIAL_STREAM.bitrate;
-            document.getElementById('marquee-track').textContent = OFFICIAL_STREAM.marquee;
-
-            if (currentMode === 'live') {
-                currentStreamUrl = OFFICIAL_STREAM.url;
-                const wasPlaying = isPlaying;
-                audioEl.src = currentStreamUrl;
-                if (wasPlaying) playAudio();
-            }
-            showToast("Configuración de señal y marquesina actualizada en vivo");
-        }
-
-        function addAdminTrackHistory(e) {
-            e.preventDefault();
-            const title = document.getElementById('adm-track-title').value.trim();
-            const artist = document.getElementById('adm-track-artist').value.trim();
-            if (!title || !artist) return;
-
-            if (TRACK_HISTORY.length > 0) {
-                TRACK_HISTORY[0].time = "Hace unos min";
-            }
-            TRACK_HISTORY.unshift({ title, artist, time: "Al Aire" });
-            renderTrackHistory();
-            renderAdminDashboard();
-            e.target.reset();
-            showToast("Tema en vivo actualizado en el historial");
-        }
-
-        function deleteAdminHistory(index) {
-            TRACK_HISTORY.splice(index, 1);
-            if (TRACK_HISTORY.length > 0) TRACK_HISTORY[0].time = "Al Aire";
-            renderTrackHistory();
-            renderAdminDashboard();
-            showToast("Registro eliminado del historial");
-        }
-
-        function updateAdminCredentials(e) {
-            e.preventDefault();
-            const newUser = document.getElementById('adm-cred-user').value.trim();
-            const newPass = document.getElementById('adm-cred-pass').value;
-            if (!newUser || !newPass) return;
-
-            ADMIN_CREDENTIALS.username = newUser;
-            ADMIN_CREDENTIALS.password = newPass;
-            document.getElementById('adm-cred-pass').value = '';
-            showToast(`Credenciales actualizadas para el usuario "${newUser}"`);
-        }
-
-        function addAdminPodcast(e) {
-            e.preventDefault();
-            const ep = document.getElementById('adm-pod-ep').value.trim();
-            const duration = document.getElementById('adm-pod-duration').value.trim();
-            const date = document.getElementById('adm-pod-date').value.trim();
-            const title = document.getElementById('adm-pod-title').value.trim();
-            const desc = document.getElementById('adm-pod-desc').value.trim();
-            const audioUrl = document.getElementById('adm-pod-url').value.trim();
-
-            PODCAST_EPISODES.unshift({
-                id: Date.now(),
-                ep,
-                title,
-                desc,
-                duration,
-                date,
-                audioUrl
-            });
-            renderPodcasts();
-            renderAdminDashboard();
-            e.target.reset();
-            showToast(`Podcast ${ep} publicado correctamente`);
-        }
-
-        function deleteAdminPodcast(index) {
-            PODCAST_EPISODES.splice(index, 1);
-            renderPodcasts();
-            renderAdminDashboard();
-            showToast("Episodio de podcast eliminado");
-        }
-
-        function addAdminSchedule(e) {
-            e.preventDefault();
-            const dayGroup = document.getElementById('adm-sched-day').value;
-            const time = document.getElementById('adm-sched-time').value.trim();
-            const tag = document.getElementById('adm-sched-tag').value.trim();
-            const title = document.getElementById('adm-sched-title').value.trim();
-            const host = document.getElementById('adm-sched-host').value.trim();
-
-            SCHEDULE_DATA[dayGroup].push({ time, title, host, tag });
-            filterSchedule(dayGroup);
-            renderAdminDashboard();
-            e.target.reset();
-            showToast("Programa agregado a la parrilla oficial");
-        }
-
-        function deleteAdminSchedule(dayGroup, index) {
-            SCHEDULE_DATA[dayGroup].splice(index, 1);
-            filterSchedule(dayGroup);
-            renderAdminDashboard();
-            showToast("Programa eliminado de la parrilla");
-        }
-
-        function deleteAdminCabinMessage(index) {
-            CABIN_MESSAGES.splice(index, 1);
-            renderCabinWall();
-            renderAdminDashboard();
-            showToast("Mensaje eliminado del muro de cabina");
-        }
-
-        /* =========================================================================
-           6. TAB NAVIGATION & UTILITIES
-           ========================================================================= */
-        function switchTab(tabId) {
-            if (tabId === 'admin' && !isAdminAuthenticated) {
-                handleAdminAccess();
-                return;
-            }
-            const tabs = ['live', 'podcasts', 'schedule', 'contact', 'admin'];
-            tabs.forEach(t => {
-                const section = document.getElementById(`tab-${t}`);
-                const deskBtn = document.getElementById(`nav-desk-${t}`);
-                const mobBtn = document.getElementById(`nav-mob-${t}`);
-
-                if (!section) return;
-
-                if (t === tabId) {
-                    section.classList.remove('hidden');
-                    if (deskBtn) {
-                        deskBtn.className = "tab-btn-desk px-3.5 py-1.5 rounded-xl text-xs lg:text-sm font-bold transition-all bg-citizen-yellow text-black shadow-md";
-                    }
-                    if (mobBtn) {
-                        mobBtn.className = "flex flex-col items-center justify-center py-2 rounded-xl text-citizen-yellow font-bold transition-all";
-                    }
-                } else {
-                    section.classList.add('hidden');
-                    if (deskBtn) {
-                        deskBtn.className = "tab-btn-desk px-3.5 py-1.5 rounded-xl text-xs lg:text-sm font-semibold text-slate-300 hover:text-white transition-all";
-                    }
-                    if (mobBtn) {
-                        mobBtn.className = "flex flex-col items-center justify-center py-2 rounded-xl text-slate-400 font-medium transition-all";
-                    }
-                }
-            });
-        }
-
-        function showToast(msg) {
-            const toast = document.getElementById('toast-notification');
-            document.getElementById('toast-message').textContent = msg;
-            toast.classList.remove('hidden');
-            setTimeout(() => {
-                toast.classList.add('hidden');
-            }, 3400);
-        }
-
-        function shareRadio() {
-            const shareText = "🎧 Escucha nuestra señal de radio online y podcasts en vivo desde Ecuador para el mundo.";
-            if (navigator.share) {
-                navigator.share({
-                    title: 'Radio Online & Podcast 593',
-                    text: shareText,
-                    url: window.location.href
-                }).catch(() => {});
-            } else {
-                const tempInput = document.createElement('input');
-                tempInput.value = window.location.href;
-                document.body.appendChild(tempInput);
-                tempInput.select();
-                document.execCommand('copy');
-                document.body.removeChild(tempInput);
-                showToast("Enlace copiado al portapapeles");
-            }
-        }
-
-        // Simulate realistic listener count fluctuation
-        setInterval(() => {
-            const el = document.getElementById('listener-count');
-            const current = parseInt(el.textContent, 10) || 418;
-            const delta = Math.floor(Math.random() * 7) - 3;
-            el.textContent = Math.max(120, current + delta);
-        }, 5000);
-
-        // Initialize App on Load
-        window.addEventListener('DOMContentLoaded', () => {
-            renderTrackHistory();
-            renderPodcasts();
-            filterSchedule('weekdays');
-            renderCabinWall();
-            animateLunaSpectrum();
-        });
-    </script>
+  </div>
+
+  <div class="temporizador">
+    <h3>&#9202; Apagar la radio en...</h3>
+    <div class="tiempos">
+      <button type="button" id="btnTimer">&#9202; Elegir tiempo &#9662;</button>
+      <div class="lista-tiempos" id="listaTiempos">
+        <button type="button" data-min="15">15 minutos</button>
+        <button type="button" data-min="30">Media hora</button>
+        <button type="button" data-min="45">45 minutos</button>
+        <button type="button" data-min="60">60 minutos</button>
+      </div>
+    </div>
+    <div id="cuenta"></div>
+    <button type="button" id="cancelarTimer">Cancelar temporizador</button>
+  </div>
+  </div>
+
+  <div class="panel" id="pCabina">
+  <div class="seccion">
+    <h2>Peticiones y saludos</h2>
+    <label for="pNombre">Tu nombre</label>
+    <input type="text" id="pNombre" placeholder="Ej: María">
+    <label for="pCiudad">Ciudad o sector</label>
+    <input type="text" id="pCiudad" placeholder="Ej: Quito, Carcelén">
+    <label for="pTipo">Qué quieres enviar</label>
+    <select id="pTipo">
+      <option>Petición musical</option>
+      <option>Saludo</option>
+      <option>Dedicatoria</option>
+    </select>
+    <label for="pCancion">Canción y artista (si es petición)</label>
+    <input type="text" id="pCancion" placeholder="Ej: Mi tierra - Gloria Estefan">
+    <label for="pMensaje">Mensaje o saludo</label>
+    <textarea id="pMensaje" placeholder="Escribe aquí tu saludo o dedicatoria"></textarea>
+    <button type="button" class="enviar" id="btnPeticion">Enviar por WhatsApp</button>
+  </div>
+
+  <a class="boton whatsapp" id="linkWhatsapp" href="#" target="_blank">Escríbenos por WhatsApp</a>
+  <a class="boton red" id="linkFb" href="https://www.facebook.com/TU_PAGINA" target="_blank">Facebook</a>
+  <a class="boton red" id="linkIg" href="https://www.instagram.com/TU_USUARIO" target="_blank">Instagram</a>
+  <a class="boton red" id="linkTt" href="https://www.tiktok.com/@TU_USUARIO" target="_blank">TikTok</a>
+  </div>
+
+  <div class="panel" id="pPodcasts">
+  <div class="seccion" id="listaPodcasts">
+    <h2>Podcasts</h2>
+    <a class="podcast" href="https://TU-ENLACE-PODCAST-1" target="_blank"><b>Podcast de ejemplo 1</b><span>Descripción corta del podcast</span></a>
+    <a class="podcast" href="https://TU-ENLACE-PODCAST-2" target="_blank"><b>Podcast de ejemplo 2</b><span>Descripción corta del podcast</span></a>
+    <a class="podcast" href="https://TU-ENLACE-PODCAST-3" target="_blank"><b>Podcast de ejemplo 3</b><span>Descripción corta del podcast</span></a>
+  </div>
+
+  </div>
+
+  <div class="panel" id="pMalla">
+  <div class="seccion">
+    <h2>Malla de programación</h2>
+    <table class="malla" id="tablaMalla">
+      <tr><th>Horario</th><th>Programa</th></tr>
+      <tr><td>06:00 - 09:00</td><td>Buenos días Citizen (ejemplo)</td></tr>
+      <tr><td>09:00 - 12:00</td><td>Música y variedad (ejemplo)</td></tr>
+      <tr><td>12:00 - 15:00</td><td>Hora del almuerzo (ejemplo)</td></tr>
+      <tr><td>15:00 - 18:00</td><td>Tarde de éxitos (ejemplo)</td></tr>
+      <tr><td>18:00 - 21:00</td><td>Noche de podcast (ejemplo)</td></tr>
+    </table>
+  </div>
+
+  <div class="panel" id="pAdmin">
+    <div class="seccion">
+      <h2>Administración</h2>
+      <div id="loginAdmin">
+        <label for="admUser">Usuario</label>
+        <input type="text" id="admUser" autocomplete="off">
+        <label for="admPass">Clave</label>
+        <input type="password" id="admPass" autocomplete="off">
+        <button type="button" class="btn-admin" id="btnLogin">Entrar</button>
+      </div>
+
+      <div id="panelAdmin">
+        <h3>Datos generales</h3>
+        <label for="cfgStream">Enlace del streaming</label>
+        <input type="text" id="cfgStream">
+        <label for="cfgWhats">Número de WhatsApp (con código de país, sin signos)</label>
+        <input type="text" id="cfgWhats">
+        <label for="cfgMarquesina">Texto de la marquesina</label>
+        <input type="text" id="cfgMarquesina">
+
+        <h3>Redes sociales</h3>
+        <label for="cfgFb">Facebook</label>
+        <input type="text" id="cfgFb">
+        <label for="cfgIg">Instagram</label>
+        <input type="text" id="cfgIg">
+        <label for="cfgTt">TikTok</label>
+        <input type="text" id="cfgTt">
+
+        <h3>Podcasts</h3>
+        <div class="ayuda">Una línea por podcast, así: Nombre | Descripción | Enlace</div>
+        <textarea id="cfgPodcasts"></textarea>
+
+        <h3>Malla de programación</h3>
+        <div class="ayuda">Una línea por programa, así: Horario | Programa</div>
+        <textarea id="cfgMalla"></textarea>
+
+        <button type="button" class="btn-admin" id="btnAplicar">Probar cambios aquí</button>
+        <button type="button" class="btn-admin" id="btnDescargar">Descargar config.json</button>
+        <button type="button" class="btn-admin sec" id="btnSalir">Salir</button>
+        <div id="adminMsg"></div>
+        <div class="ayuda" style="margin-top:10px">Para publicar: descarga config.json y súbelo a tu repositorio de GitHub (Add file, Upload files), reemplazando el anterior.</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="pie">Citizen 593 Radio y Podcast<br><button type="button" class="admin-link" id="abrirAdmin">Administración</button></div>
+
+  </div>
+  </div>
+</div>
+<!-- fin contenedor -->
+
+<div class="marquesina"><span id="textoMarquesina">&#128062; Muchos dicen amar a los animales, pocos tienen el corazón de hacerlo. &#128062;</span></div>
+
+<audio id="audio" preload="none"></audio>
+
+<script>
+  // CAMBIA ESTE ENLACE por el de tu streaming en vivo
+  var URL_STREAMING = 'https://TU-SERVIDOR/stream.mp3';
+
+  // Número de WhatsApp de la radio, con código de país y sin signos
+  var NUMERO_WHATSAPP = '593989513973';
+
+  var audio = document.getElementById('audio');
+  var btn = document.getElementById('btnPlay');
+  var estado = document.getElementById('estado');
+  var vol = document.getElementById('vol');
+  var sonando = false;
+  var disco = document.getElementById('disco');
+  var ecu = document.getElementById('ecualizador');
+
+  function animar(activo) {
+    if (activo) { disco.classList.add('activo'); ecu.classList.add('activo'); }
+    else { disco.classList.remove('activo'); ecu.classList.remove('activo'); }
+  }
+
+  document.getElementById('linkWhatsapp').href =
+    'https://wa.me/' + NUMERO_WHATSAPP + '?text=' +
+    encodeURIComponent('Hola Citizen 593, los escucho desde la app.');
+
+  document.getElementById('btnPeticion').addEventListener('click', function () {
+    var nombre = document.getElementById('pNombre').value.trim();
+    var ciudad = document.getElementById('pCiudad').value.trim();
+    var tipo = document.getElementById('pTipo').value;
+    var cancion = document.getElementById('pCancion').value.trim();
+    var mensaje = document.getElementById('pMensaje').value.trim();
+    if (!nombre) { alert('Por favor escribe tu nombre.'); return; }
+    var texto = 'Hola Citizen 593!\n' +
+      'Tipo: ' + tipo + '\n' +
+      'Nombre: ' + nombre + '\n' +
+      'Ciudad: ' + ciudad + '\n' +
+      (cancion ? 'Canción: ' + cancion + '\n' : '') +
+      (mensaje ? 'Mensaje: ' + mensaje : '');
+    window.open('https://wa.me/' + NUMERO_WHATSAPP + '?text=' + encodeURIComponent(texto), '_blank');
+  });
+
+  // ===== ADMINISTRACION =====
+  // Cambia aqui el usuario y la clave del panel
+  var ADMIN_USUARIO = 'admin';
+  var ADMIN_CLAVE = 'citizen593';
+
+  var config = {
+    streaming: URL_STREAMING,
+    whatsapp: NUMERO_WHATSAPP,
+    marquesina: document.getElementById('textoMarquesina').textContent.trim(),
+    facebook: document.getElementById('linkFb').getAttribute('href'),
+    instagram: document.getElementById('linkIg').getAttribute('href'),
+    tiktok: document.getElementById('linkTt').getAttribute('href'),
+    podcasts: [],
+    malla: []
+  };
+
+  document.querySelectorAll('#listaPodcasts .podcast').forEach(function (a) {
+    config.podcasts.push({
+      nombre: a.querySelector('b').textContent,
+      descripcion: a.querySelector('span').textContent,
+      enlace: a.getAttribute('href')
+    });
+  });
+  document.querySelectorAll('#tablaMalla tr').forEach(function (tr, i) {
+    if (i === 0) return;
+    var td = tr.querySelectorAll('td');
+    config.malla.push({ horario: td[0].textContent, programa: td[1].textContent });
+  });
+
+  function esc(t) {
+    return String(t).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+  }
+
+  function aplicarConfig() {
+    URL_STREAMING = config.streaming;
+    NUMERO_WHATSAPP = config.whatsapp;
+    document.getElementById('textoMarquesina').innerHTML = '&#128062; ' + esc(config.marquesina) + ' &#128062;';
+    document.getElementById('linkFb').href = config.facebook;
+    document.getElementById('linkIg').href = config.instagram;
+    document.getElementById('linkTt').href = config.tiktok;
+    document.getElementById('linkWhatsapp').href = 'https://wa.me/' + config.whatsapp + '?text=' + encodeURIComponent('Hola Citizen 593, los escucho desde la app.');
+
+    var htmlP = '<h2>Podcasts</h2>';
+    config.podcasts.forEach(function (p) {
+      htmlP += '<a class="podcast" href="' + esc(p.enlace) + '" target="_blank"><b>' + esc(p.nombre) + '</b><span>' + esc(p.descripcion) + '</span></a>';
+    });
+    document.getElementById('listaPodcasts').innerHTML = htmlP;
+
+    var htmlM = '<tr><th>Horario</th><th>Programa</th></tr>';
+    config.malla.forEach(function (m) {
+      htmlM += '<tr><td>' + esc(m.horario) + '</td><td>' + esc(m.programa) + '</td></tr>';
+    });
+    document.getElementById('tablaMalla').innerHTML = htmlM;
+  }
+
+  function llenarFormulario() {
+    document.getElementById('cfgStream').value = config.streaming;
+    document.getElementById('cfgWhats').value = config.whatsapp;
+    document.getElementById('cfgMarquesina').value = config.marquesina;
+    document.getElementById('cfgFb').value = config.facebook;
+    document.getElementById('cfgIg').value = config.instagram;
+    document.getElementById('cfgTt').value = config.tiktok;
+    document.getElementById('cfgPodcasts').value = config.podcasts.map(function (p) {
+      return p.nombre + ' | ' + p.descripcion + ' | ' + p.enlace;
+    }).join('\n');
+    document.getElementById('cfgMalla').value = config.malla.map(function (m) {
+      return m.horario + ' | ' + m.programa;
+    }).join('\n');
+  }
+
+  function leerFormulario() {
+    config.streaming = document.getElementById('cfgStream').value.trim();
+    config.whatsapp = document.getElementById('cfgWhats').value.replace(/[^0-9]/g, '');
+    config.marquesina = document.getElementById('cfgMarquesina').value.trim();
+    config.facebook = document.getElementById('cfgFb').value.trim();
+    config.instagram = document.getElementById('cfgIg').value.trim();
+    config.tiktok = document.getElementById('cfgTt').value.trim();
+    config.podcasts = document.getElementById('cfgPodcasts').value.split('\n').filter(function (l) { return l.trim(); }).map(function (l) {
+      var p = l.split('|');
+      return { nombre: (p[0] || '').trim(), descripcion: (p[1] || '').trim(), enlace: (p[2] || '').trim() };
+    });
+    config.malla = document.getElementById('cfgMalla').value.split('\n').filter(function (l) { return l.trim(); }).map(function (l) {
+      var p = l.split('|');
+      return { horario: (p[0] || '').trim(), programa: (p[1] || '').trim() };
+    });
+  }
+
+  // Al abrir la pagina, intenta leer config.json del repositorio
+  fetch('config.json?v=' + Date.now())
+    .then(function (r) { return r.ok ? r.json() : null; })
+    .then(function (c) {
+      if (c) { for (var k in c) { config[k] = c[k]; } }
+      aplicarConfig();
+    })
+    .catch(function () { aplicarConfig(); });
+
+  var adminMsg = document.getElementById('adminMsg');
+  var pAdmin = document.getElementById('pAdmin');
+
+  document.getElementById('abrirAdmin').addEventListener('click', function () {
+    document.querySelectorAll('.pestanas button').forEach(function (x) { x.classList.remove('activa'); });
+    document.querySelectorAll('.panel').forEach(function (p) { p.classList.remove('activo'); });
+    pAdmin.classList.add('activo');
+  });
+
+  document.getElementById('btnLogin').addEventListener('click', function () {
+    var u = document.getElementById('admUser').value.trim();
+    var c = document.getElementById('admPass').value;
+    if (u === ADMIN_USUARIO && c === ADMIN_CLAVE) {
+      document.getElementById('loginAdmin').style.display = 'none';
+      document.getElementById('panelAdmin').classList.add('abierto');
+      llenarFormulario();
+    } else {
+      alert('Usuario o clave incorrectos.');
+    }
+  });
+
+  document.getElementById('btnAplicar').addEventListener('click', function () {
+    leerFormulario();
+    aplicarConfig();
+    adminMsg.textContent = 'Cambios aplicados solo en este navegador. Descarga config.json para publicarlos.';
+  });
+
+  document.getElementById('btnDescargar').addEventListener('click', function () {
+    leerFormulario();
+    aplicarConfig();
+    var blob = new Blob([JSON.stringify(config, null, 2)], { type: 'application/json' });
+    var enlace = document.createElement('a');
+    enlace.href = URL.createObjectURL(blob);
+    enlace.download = 'config.json';
+    document.body.appendChild(enlace);
+    enlace.click();
+    document.body.removeChild(enlace);
+    adminMsg.textContent = 'Archivo config.json descargado. Súbelo a GitHub para publicar los cambios.';
+  });
+
+  document.getElementById('btnSalir').addEventListener('click', function () {
+    document.getElementById('loginAdmin').style.display = 'block';
+    document.getElementById('panelAdmin').classList.remove('abierto');
+    document.getElementById('admPass').value = '';
+    adminMsg.textContent = '';
+    document.querySelectorAll('.pestanas button').forEach(function (x) { x.classList.remove('activa'); });
+    document.querySelectorAll('.panel').forEach(function (p) { p.classList.remove('activo'); });
+    document.getElementById('pBienvenida').classList.add('activo');
+    document.querySelector('.pestanas button').classList.add('activa');
+  });
+
+  var botonesPestana = document.querySelectorAll('.pestanas button');
+  var paneles = document.querySelectorAll('.panel');
+  botonesPestana.forEach(function (bp) {
+    bp.addEventListener('click', function () {
+      botonesPestana.forEach(function (x) { x.classList.remove('activa'); });
+      paneles.forEach(function (p) { p.classList.remove('activo'); });
+      bp.classList.add('activa');
+      document.getElementById(bp.getAttribute('data-panel')).classList.add('activo');
+    });
+  });
+
+  var intervaloTimer = null;
+  var finTimer = 0;
+  var botonesTiempo = document.querySelectorAll('#listaTiempos button');
+  var lista = document.getElementById('listaTiempos');
+  var btnTimer = document.getElementById('btnTimer');
+
+  btnTimer.addEventListener('click', function () {
+    lista.classList.toggle('abierta');
+  });
+  var cuenta = document.getElementById('cuenta');
+  var cancelar = document.getElementById('cancelarTimer');
+
+  function detenerRadio() {
+    audio.pause();
+    audio.removeAttribute('src');
+    audio.load();
+    sonando = false;
+    btn.innerHTML = '&#9658;';
+    estado.textContent = 'Pausado';
+    animar(false);
+  }
+
+  function limpiarTimer() {
+    if (intervaloTimer) { clearInterval(intervaloTimer); intervaloTimer = null; }
+    botonesTiempo.forEach(function (b) { b.classList.remove('elegido'); });
+    cancelar.style.display = 'none';
+  }
+
+  function actualizarCuenta() {
+    var resta = Math.max(0, Math.round((finTimer - Date.now()) / 1000));
+    if (resta <= 0) {
+      limpiarTimer();
+      btnTimer.innerHTML = '&#9202; Elegir tiempo &#9662;';
+      detenerRadio();
+      cuenta.textContent = 'Temporizador terminado. ¡Hasta pronto!';
+      return;
+    }
+    var m = Math.floor(resta / 60);
+    var s = resta % 60;
+    cuenta.textContent = 'Se apagará en ' + m + ':' + (s < 10 ? '0' : '') + s;
+  }
+
+  botonesTiempo.forEach(function (b) {
+    b.addEventListener('click', function () {
+      limpiarTimer();
+      lista.classList.remove('abierta');
+      btnTimer.innerHTML = '&#9202; ' + b.textContent + ' &#9662;';
+      b.classList.add('elegido');
+      finTimer = Date.now() + parseInt(b.getAttribute('data-min'), 10) * 60000;
+      cancelar.style.display = 'block';
+      actualizarCuenta();
+      intervaloTimer = setInterval(actualizarCuenta, 1000);
+    });
+  });
+
+  cancelar.addEventListener('click', function () {
+    limpiarTimer();
+    btnTimer.innerHTML = '&#9202; Elegir tiempo &#9662;';
+    cuenta.textContent = 'Temporizador cancelado.';
+  });
+
+  audio.volume = vol.value;
+  vol.addEventListener('input', function () { audio.volume = vol.value; });
+
+  btn.addEventListener('click', function () {
+    if (!sonando) {
+      audio.src = URL_STREAMING + '?t=' + Date.now();
+      estado.textContent = 'Conectando...';
+      audio.play().then(function () {
+        sonando = true;
+        btn.innerHTML = '&#10074;&#10074;';
+        estado.textContent = 'En vivo';
+        animar(true);
+      }).catch(function () {
+        estado.textContent = 'No se pudo conectar. Intenta de nuevo.';
+        animar(false);
+      });
+    } else {
+      audio.pause();
+      audio.removeAttribute('src');
+      audio.load();
+      sonando = false;
+      btn.innerHTML = '&#9658;';
+      estado.textContent = 'Pausado';
+      animar(false);
+    }
+  });
+
+  audio.addEventListener('error', function () {
+    if (sonando || audio.src) {
+      estado.textContent = 'Sin señal. Revisa el enlace del streaming.';
+    }
+  });
+
+  // ===== DISEÑO: reproductor a la izquierda en computadora, arriba en celular =====
+  var origenRadio = document.getElementById('origenRadio');
+  var columnaRadio = document.getElementById('columnaRadio');
+  var enMovil = document.getElementById('pBienvenida');
+  var anchoPc = window.matchMedia('(min-width: 900px)');
+
+  function acomodarDiseno() {
+    if (anchoPc.matches) {
+      columnaRadio.appendChild(origenRadio);
+    } else {
+      enMovil.parentNode.insertBefore(origenRadio, enMovil);
+    }
+  }
+  acomodarDiseno();
+  if (anchoPc.addEventListener) { anchoPc.addEventListener('change', acomodarDiseno); }
+  else { anchoPc.addListener(acomodarDiseno); }
+
+  // En celular, el panel de bienvenida no hace falta: el reproductor ya esta arriba
+  var estiloMovil = document.createElement('style');
+  estiloMovil.textContent = '@media (max-width: 899px) { #pBienvenida { display: none !important; } #origenRadio { margin-bottom: 18px; } }';
+  document.head.appendChild(estiloMovil);
+</script>
 </body>
 </html>
+Qué debes cambiar
+En el código hay tres cosas para personalizar: el enlace del streaming en la línea que dice URL_STREAMING, el número de WhatsApp en NUMERO_WHATSAPP, y los enlaces de Facebook, Instagram y TikTok, donde dice TU_PAGINA y TU_USUARIO. Si tu streaming usa http y no https, el navegador puede bloquearlo en una página publicada en GitHub, así que conviene pedirle a tu proveedor un enlace seguro.
